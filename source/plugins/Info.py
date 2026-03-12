@@ -9,7 +9,7 @@ from ..library.songinfo_drawer import generateSongInfo
 from ..library.upload_img import uploadImg, getURL
 
 CANBE_PREFIX = ("/info", "info", "/查歌", "查歌")
-CANBE_SUFFIX = ("是什么歌")
+CANBE_SUFFIX = ("是什么歌",)
 
 @registerChecker
 def isCommandText(text: str) -> bool:
