@@ -175,14 +175,14 @@ class ScoreCard:
     
         self.font_title = Font.get("SourceHanSans-Bold.otf", 18)
         self.font_count = Font.get("Exo-SemiBold.ttf", 20)
-        self.font_id = Font.get("Exo-Medium.ttf", 12)
+        self.font_id = Font.get("MapleMono-CN-Medium.ttf", 12)
         self.font_acc = Font.get("Exo-SemiBold.ttf", 24)
         self.font_dxscore = Font.get("Exo-Medium.ttf", 12)
         self.font_ra = Font.get("Exo-Medium.ttf", 12)
         self.font_diff = Font.get("Exo-Medium.ttf", 17)
 
-        self.colors = DIFF_COL_LIST[self.grade.level_id]
-        self.font_color = DIFF_FONT_COL_LIST[self.grade.level_id]
+        self.cols = DIFF_COL_LIST[self.grade.level_id]
+        self.col_font = DIFF_FONT_COL_LIST[self.grade.level_id]
     
     def render(self) -> Image.Image:
         img = Image.new("RGBA", (self.W, self.H))
@@ -208,7 +208,7 @@ class ScoreCard:
         return shadowed(img, offset=(4, 4), blur=2, scale=1.0, color=(0, 0, 0, 100))
 
     def _draw_base(self) -> Image.Image:
-        base = Image.new("RGBA", (self.base_W, self.base_H), self.colors[0] + (255,))
+        base = Image.new("RGBA", (self.base_W, self.base_H), self.cols[0] + (255,))
         return base
 
     def _draw_cover(self) -> Image.Image:
@@ -220,7 +220,7 @@ class ScoreCard:
     def _draw_title_bar(self) -> Image.Image:
         text_y_off = 5
 
-        bar = Image.new("RGBA", (self.base_W, self.title_bar_H), self.colors[1] + (255,))
+        bar = Image.new("RGBA", (self.base_W, self.title_bar_H), self.cols[1] + (255,))
         title = truncate(
             self.grade.title,
             max_width=self.base_W - self.PADDING * 2,
@@ -231,7 +231,7 @@ class ScoreCard:
             (self.PADDING, (self.title_bar_H - self.font_title.size) // 2 - text_y_off),
             title,
             font=self.font_title,
-            fill=self.font_color
+            fill=self.col_font
         )
         return bar
 
@@ -241,7 +241,7 @@ class ScoreCard:
 
         res = Image.new("RGBA", (self.tag_W + self.subtag_W, self.tag_H))
 
-        tag = Image.new("RGBA", (self.tag_W, self.tag_H), self.colors[1] + (255,))
+        tag = Image.new("RGBA", (self.tag_W, self.tag_H), self.cols[1] + (255,))
         tag_text = f"#{self.grade.count}"
         bbox = ImageDraw.Draw(tag).textbbox((0, 0), tag_text, font=self.font_count)
         w = bbox[2] - bbox[0]
@@ -250,10 +250,10 @@ class ScoreCard:
             ((self.tag_W - w) // 2, (self.tag_H - h) // 2 - text_count_y_off),
             tag_text,
             font=self.font_count,
-            fill=self.font_color
+            fill=self.col_font
         )
 
-        subtag = Image.new("RGBA", (self.subtag_W, self.subtag_H), self.colors[2] + (255,))
+        subtag = Image.new("RGBA", (self.subtag_W, self.subtag_H), self.cols[2] + (255,))
         subtag_text = f"{self.grade.type} {self.grade.id}"
         bbox = ImageDraw.Draw(subtag).textbbox((0, 0), subtag_text, font=self.font_id)
         w = bbox[2] - bbox[0]
@@ -262,7 +262,7 @@ class ScoreCard:
             (self.PADDING // 2, (self.subtag_H - h) // 2 - text_id_y_off),
             subtag_text,
             font=self.font_id,
-            fill=self.font_color
+            fill=self.col_font
         )
 
         res.alpha_composite(tag, (0, 0))
@@ -286,7 +286,7 @@ class ScoreCard:
             (0, y - text_y_off),
             acc_text,
             font=self.font_acc,
-            fill=self.font_color
+            fill=self.col_font
         )
         y += acc_h + text_padding
 
@@ -298,7 +298,7 @@ class ScoreCard:
             (0, y - text_y_off),
             dx_score_text,
             font=self.font_dxscore,
-            fill=self.font_color
+            fill=self.col_font
         )
 
         # rating
@@ -310,7 +310,7 @@ class ScoreCard:
             (content.width - ra_w - self.PADDING - ra_text_x_off, y - text_y_off),
             ra_text,
             font=self.font_ra,
-            fill=self.font_color
+            fill=self.col_font
         )
         y += max(ra_h, dx_h) + text_pic_padding
 
@@ -320,7 +320,7 @@ class ScoreCard:
 
         blank_pic = Image.open(UI_DIR / "blank.png").convert("RGBA")
         blank_pic = blank_pic.resize((grade_pic_size, grade_pic_size), Image.LANCZOS)
-        blank_pic = filter(blank_pic, self.colors[0] + (180,))
+        blank_pic = filter(blank_pic, self.cols[0] + (180,))
 
         if self.grade.fc == "":
             fc_pic = blank_pic.copy()
@@ -349,7 +349,7 @@ class ScoreCard:
                 star_count = i + 1
         if star_count > 7:
             star_count = 7
-        star_pic = Image.new("RGBA", (star_pic_size * 4 + 10, star_pic_size * 2 + 10), (0, 0, 0, 0))
+        star_pic = Image.new("RGBA", (star_pic_size * 4 + 10, star_pic_size * 2 + 10))
 
         Ox = (grade_pic_size + pic_padding) * 2 + (content.width - (grade_pic_size + pic_padding) * 2) // 2
         Oy = y + grade_pic_size // 2
@@ -419,7 +419,7 @@ class ScoreCard:
 
         badge = Image.new("RGBA", (size, size))
         draw = ImageDraw.Draw(badge)
-        draw.polygon(points, fill=self.colors[1] + (255,))
+        draw.polygon(points, fill=self.cols[1] + (255,))
 
         diff_text = f"{self.grade.diff:.1f}"
         bbox = draw.textbbox((0, 0), diff_text, font=self.font_diff)
@@ -430,7 +430,7 @@ class ScoreCard:
             ((size - w) // 2, (size - h) // 2 - text_y_off),
             diff_text,
             font=self.font_diff,
-            fill=self.font_color
+            fill=self.col_font
         )
         return shadowed(badge, offset=(2, 2), blur=1, scale=1.0, color=(0, 0, 0, 100))
 
@@ -443,9 +443,9 @@ class UserCard:
         self.user = user
 
         self.name_font = Font.get("SourceHanSans-Bold.otf", 32)
-        self.ra_font = Font.get("consolas.ttf", 24)
+        self.ra_font = Font.get("MapleMono-CN-Medium.ttf", 22)
 
-        self.font_color = (31, 30, 51, 255)
+        self.col_font = (31, 30, 51, 255)
         self.font_ra_color = (255, 215, 0, 255) # gold
 
     def render(self) -> Image.Image:
@@ -556,7 +556,7 @@ class UserCard:
             (text_x_pad, text_y_pad),
             self.user.name,
             font=self.name_font,
-            fill=self.font_color
+            fill=self.col_font
         )
 
         return box
@@ -580,7 +580,7 @@ class UserCard:
             (text_x_pad, text_y_pad),
             text,
             font=self.ra_font,
-            fill=self.font_color
+            fill=self.col_font
         )
         return box
 
@@ -594,12 +594,13 @@ class Canvas:
     logo_size: int = CONFIG['logo_size']
 
     def __init__(self):
-        self.img = Image.new("RGBA", (self.W, self.H), (0, 0, 0, 0))
+        self.img = Image.new("RGBA", (self.W, self.H))
         self.draw = ImageDraw.Draw(self.img)
         self.paste = self.img.paste
 
-        self.footer_font = Font.get("consolas.ttf", 20)
-        self.footer_color = (31, 30, 51, 255)
+        self.footer_font = Font.get("MapleMono-CN-Medium.ttf", 20)
+
+        self.col_font = rgb(31, 30, 51)
     
     def render(self, user: UserInfo, b35: list[GradeInfo], b15: list[GradeInfo]) -> Image.Image:
         self._draw_bg()
@@ -643,10 +644,8 @@ class Canvas:
         grids = Grid(
             width=self.W - self.margin['left'] - self.margin['right'],
             height=self.card_gap * 6 + ScoreCard.H * 7,
-            element_w=ScoreCard.W,
-            element_h=ScoreCard.H,
-            rows=7,
-            cols=5
+            element_w=[ScoreCard.W] * 5,
+            element_h=[ScoreCard.H] * 7
         )
         positions = grids.places(len(grades))
         origin = (
@@ -662,10 +661,8 @@ class Canvas:
         grids = Grid(
             width=self.W - self.margin['left'] - self.margin['right'],
             height=self.card_gap * 2 + ScoreCard.H * 3,
-            element_w=ScoreCard.W,
-            element_h=ScoreCard.H,
-            rows=3,
-            cols=5
+            element_w=[ScoreCard.W] * 5,
+            element_h=[ScoreCard.H] * 3
         )
         positions = grids.places(len(grades))
         origin = (
@@ -678,7 +675,7 @@ class Canvas:
             self.paste(img, (origin[0] + x, origin[1] + y), img)
     
     def _draw_footer(self):
-        text = "Generated by Stellawish Bot @_Arahc_"
+        text = "Generated by 星愿 (Stellawish Bot) @_Arahc_"
         bbox = self.draw.textbbox((0, 0), text, font=self.footer_font)
         w = bbox[2] - bbox[0]
         x = (self.W - w) // 2
@@ -687,7 +684,7 @@ class Canvas:
             (x, y),
             text,
             font=self.footer_font,
-            fill=self.footer_color
+            fill=self.col_font
         )
 
 def generateB50(data: dict) -> Image.Image:

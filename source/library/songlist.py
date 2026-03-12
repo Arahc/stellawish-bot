@@ -44,7 +44,9 @@ class PartyChart:
     touch: int = 0
     breaks: int = 0
     diff: str = "0?" # difficulty is usually "xxx?"
+    diffid: int = 0
     type: str = "normal" # type is "normal" (normal party chart) or "1P" or "2P" (two players needed chart)
+    charter: str = "-"
 
     def __init__(self, chart:dict, diff: str, type: str):
         self.tap = chart['notes'][0]
@@ -54,6 +56,12 @@ class PartyChart:
         self.breaks = chart['notes'][4]
         self.diff = diff
         self.type = type
+        if type == "normal":
+            self.diffid = 5
+        elif type == "1P":
+            self.diffid = 6
+        else:
+            self.diffid = 7
     
     def exportJSON(self) -> tuple[dict, str]:
         return {

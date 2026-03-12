@@ -115,6 +115,8 @@ class QueryEngine:
     def _matchDiff(self, indent: QueryIntent, chart: Chart | PartyChart) -> bool:
         if not indent.diff:
             return True
+        if chart.diffid > 4:
+            return indent.diff == 4
         return chart.diffid == indent.diff
 
     def _query(self, intent: QueryIntent) -> list[InfoTarget]:
