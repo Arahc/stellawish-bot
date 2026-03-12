@@ -19,7 +19,7 @@ def _upload_img(img, key: str, s3_client, bucket: str, domain_base: str, cache: 
         s3_client.upload_fileobj(buffer, bucket, key, ExtraArgs={"ContentType": "image/png", "CacheControl": "no-cache"})
     return f"{domain_base}/{key}"
 
-def uploadB50Img(img, name: str, cache: bool = False) -> str:
+def uploadImg(img, key: str, cache: bool = False) -> str:
     s3 = boto3.client(
         service_name="s3",
         endpoint_url=R2_ENDPOINT,
@@ -27,5 +27,7 @@ def uploadB50Img(img, name: str, cache: bool = False) -> str:
         aws_secret_access_key=R2_SECRET,
         region_name="auto"
     )
-    key = f"generate/b50/{name}" # ! remember to add suffix, e.g. .png
     return _upload_img(img, key, s3, R2_BUCKET, DOMAIN_BASE, cache)
+
+def getURL(key: str) -> str:
+    return f"{DOMAIN_BASE}/{key}"

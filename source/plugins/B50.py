@@ -7,8 +7,8 @@ import httpx
 from ..library.user_info import getUserInfo, canFetchB50
 from ..library.command_registry import registerChecker
 from ..library.static import DIVEFISH_B50_API_URL as B50_API_URL
-from ..library.b50drawer import generateB50
-from ..library.upload_img import uploadB50Img as uploadImg
+from ..library.b50_drawer import generateB50
+from ..library.upload_img import uploadImg
 
 VALID_COMMAND = ("/b50", "b50")
 
@@ -21,11 +21,6 @@ def isValidCommand(event: Event) -> bool:
     return isCommandText(event.get_message().extract_plain_text().lower().strip())
 
 b50 = on_message(rule=to_me() & isValidCommand, priority=1)
-
-def isValidQQID(qqid: str) -> bool:
-    return qqid.isdigit() and 10000 <= int(qqid) <= 999999999999
-def isValidToekn(token: str) -> bool:
-    return len(token) >= 20
 
 @b50.handle()
 async def _(event: Event):
@@ -56,7 +51,7 @@ async def _(event: Event):
         await b50.finish(f"❌查询失败：水鱼 API 返回了错误的状态码 {resp.status_code}，请稍后再试。")
 
     data = resp.json()
-    await b50.send("⏳查询成功，正在生成图片...")
     pic = generateB50(data)
-    url = uploadImg(pic, f"{qq_id}.png", cache=False)
+    await b50.send("⏳查询成功，正在发送图片……若长时间未回复，为 QQ 获取图片超时，请稍后再试。")
+    url = uploadImg(pic, f"generate/b50/{qq_id}.png", cache=False)
     await b50.finish(MessageSegment.image(url))

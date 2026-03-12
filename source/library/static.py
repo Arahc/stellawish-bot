@@ -1,6 +1,9 @@
 from pathlib import Path
 import os
 
+def rgb(r: int, g: int, b: int) -> tuple[int, int, int]:
+    return (r, g, b)
+
 DIVEFISH_API_BASE_URL = "https://www.diving-fish.com/api/maimaidxprober"
 
 DIVEFISH_ALL_CHARTS_API_URL = DIVEFISH_API_BASE_URL + "/music_data"
@@ -79,4 +82,29 @@ INFO_QUERY_DIFF_KEY = {
     "紫": 3,
     "白": 4
 }
-DIFF_NAME_LIST = ["🟩Basic", "🟨Advanced", "🟥Expert", "🟪Master", "⬜Re:Master"]
+
+DIFF_NAME_LIST = ["Basic", "Advanced", "Expert", "Master", "Re:Master", "宴会场", "宴会场（1P）", "宴会场（2P）"]
+
+STAR_DXRATE_LIST = [84.99, 89.99, 92.99, 94.99, 96.99, 98.99, 99.99, 100.00]
+
+DIFF_COL_LIST = [
+    [ rgb(105, 202, 73)  , rgb(112, 194, 119) , rgb(134, 210, 101) ], # Basic
+    [ rgb(237, 182, 44)  , rgb(234, 194, 62)  , rgb(238, 200, 119) ], # Advanced
+    [ rgb(233, 150, 157) , rgb(223, 159, 159) , rgb(236, 167, 167) ], # Expert
+    [ rgb(157, 98, 203)  , rgb(182, 112, 194) , rgb(198, 151, 206) ], # Master
+    [ rgb(243, 229, 245) , rgb(245, 216, 238) , rgb(251, 237, 247) ], # Re:Master
+    [ rgb(219, 148, 219) , rgb(230, 157, 230) , rgb(218, 157, 230) ], # 宴会场
+    [ rgb(219, 148, 219) , rgb(230, 157, 230) , rgb(218, 157, 230) ], # 宴会场 1P
+    [ rgb(219, 148, 219) , rgb(230, 157, 230) , rgb(218, 157, 230) ]  # 宴会场 2P
+]
+DIFF_FONT_COL_LIST = [
+    rgb(238, 245, 248), # Basic
+    rgb(238, 245, 248), # Advanced
+    rgb(238, 245, 248), # Expert
+    rgb(238, 245, 248), # Master
+    rgb(195, 70, 231),  # Re:Master
+    rgb(238, 245, 248), # 宴会场
+    rgb(238, 245, 248), # 宴会场 1P
+    rgb(238, 245, 248)  # 宴会场 2P
+]
+PIC_FOOTER_COL = rgb(31, 30, 51)

@@ -24,7 +24,7 @@ def isValidCommand(event: Event) -> bool:
 chartel = on_message(rule=to_me() & isValidCommand, priority=10)
 
 QUERY_POLICY = QueryPolicy(
-    allow_pack=True
+    allow_pack=True,
 )
 
 class Game:

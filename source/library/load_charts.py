@@ -1,7 +1,7 @@
-import json
 from typing import Optional
 import httpx
 from nonebot import logger
+from datetime import datetime
 
 from .static import DIVEFISH_ALL_CHARTS_API_URL as CHARTS_API_URL
 from .static import SONG_LIST_ETAG_PATH as ETAG_PATH
@@ -58,11 +58,15 @@ def UpdateAliases(charts: list[dict], aliases: list[dict]):
 
 # ----------- Maintenance -----------
 
+def getToday() -> str:
+    return datetime.now().strftime("%Y-%m-%d") # xxxx-xx-xx
+
 def addAlias(sid: int, alias: str) -> bool:
     songlist = SONG_LIST.getSongList()
     if alias in songlist[sid].aliases:
         return False
     songlist[sid].aliases.append(alias)
+    songlist[sid].info_dat_date = getToday()
     SONG_LIST.set(songlist)
     return True
 
@@ -70,6 +74,7 @@ def delAlias(sid: int, alias: str) -> bool:
     songlist = SONG_LIST.getSongList()
     if alias in songlist[sid].aliases:
         songlist[sid].aliases.remove(alias)
+        songlist[sid].info_dat_date = getToday()
         SONG_LIST.set(songlist)
         return True
     return False
@@ -80,6 +85,7 @@ def mergeCharts(old: list[dict], new: list[dict]):
     old_ids = list(old_dict.keys())
     for entry in new:
         song_id = int(entry["id"])
+        entry["info_dat_date"] = getToday()
         if song_id in old_ids:
             entry["alias"] = old_dict[song_id].get("alias", [])
             logger.info(f"Merged alias for song ID {song_id}: {entry['alias']}")

@@ -16,7 +16,7 @@ bind = on_startswith(CANBE_PREFIX, rule=to_me(), ignorecase=True, priority=8)
 
 def isValidQQID(qqid: str) -> bool:
     return qqid.isdigit() and 10000 <= int(qqid) <= 999999999999
-def isValidToekn(token: str) -> bool:
+def isValidToken(token: str) -> bool:
     return len(token) >= 20
 
 @bind.handle()

@@ -6,12 +6,12 @@ from nonebot_plugin_session import EventSession, SessionIdType
 
 import random
 import re
+from unicodedata import normalize as ucn
 
 from ..library.game_manager import GameManager
 from ..library.command_registry import registerChecker, isAnyCommand
 from ..library.songlist_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
-from ..library.utils import Q2B
 
 DEFAULT_SONG_NUM = 8
 
@@ -73,7 +73,7 @@ class Game:
         return res
 
     async def handleLetter(self, letter: str) -> str:
-        letter = Q2B(letter).lower().strip()
+        letter = ucn('NFKC', letter).lower().strip()
         if not letter:
             return "❌ 请输入要开的字符！"
         if len(letter) > 1:
@@ -86,7 +86,7 @@ class Game:
         for i in range(self.n):
             if self.success_count[i] != -1:
                 continue
-            match = Q2B(self.target[i]).lower()
+            match = ucn('NFKC', self.target[i]).lower()
             self.current[i] = ''.join(
                 self.target[i][j] if match[j] == letter else self.current[i][j]
                 for j in range(len(self.target[i]))
@@ -128,7 +128,7 @@ class Game:
         )
 
     def _isValidTitle(self, title: str) -> bool:
-        title = Q2B(title)
+        title = ucn('NFKC', title).lower()
         if '?' in title:
             return False
         for ch in title:

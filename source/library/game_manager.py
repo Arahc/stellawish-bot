@@ -1,4 +1,4 @@
-from typing import Dict, Optional
+from typing import Dict
 
 class ActiveGame:
     def __init__(self, game_type: str, game_obj: object):
@@ -13,7 +13,7 @@ class GameManager:
         return session_id in cls.active_games
 
     @classmethod
-    def getGame(cls, session_id: str) -> Optional[ActiveGame]:
+    def getGame(cls, session_id: str) -> ActiveGame | None:
         return cls.active_games.get(session_id)
 
     @classmethod

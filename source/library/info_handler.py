@@ -3,7 +3,7 @@ from typing import Optional
 from enum import Enum, auto
 import re
 
-from .songlist import Song, ChartPack, Chart, PartyChart, PartyChartPack, SongList
+from .songlist import Song, ChartPack, Chart, SongList
 from .static import INFO_QUERY_PACK_KEY, INFO_QUERY_DIFF_KEY
 
 @dataclass
@@ -73,8 +73,8 @@ class InfoTargetType(Enum):
 class InfoTarget:
     type: InfoTargetType
     song: Song
-    pack: ChartPack | PartyChartPack | None = None
-    chart: Chart | PartyChart | None = None
+    pack: ChartPack | None = None
+    chart: Chart | None = None
 
 class QueryEngine:
     def __init__(self, songlist: SongList):
@@ -107,12 +107,12 @@ class QueryEngine:
             any(t == alias.lower() for alias in song.aliases)
         )
 
-    def _matchPack(self, indent: QueryIntent, pack: ChartPack | PartyChartPack) -> bool:
+    def _matchPack(self, indent: QueryIntent, pack: ChartPack) -> bool:
         if not indent.type:
             return True
-        return getattr(pack, "type", None) == indent.type
+        return pack.type == indent.type
     
-    def _matchDiff(self, indent: QueryIntent, chart: Chart | PartyChart) -> bool:
+    def _matchDiff(self, indent: QueryIntent, chart: Chart) -> bool:
         if not indent.diff:
             return True
         if chart.diffid > 4:
@@ -168,9 +168,7 @@ class QueryEngine:
         if not pack:
             return []
         if intent.type:
-            if intent.type == "宴" and not isinstance(pack, PartyChartPack):
-                return []
-            if intent.type != "宴" and getattr(pack, "type", None) != intent.type:
+            if intent.type != pack.type:
                 return []
         if intent.diff:
             if intent.diff < len(pack.charts):
@@ -202,7 +200,7 @@ class QueryEngine:
                 continue
             if e.type == InfoTargetType.CHART and not policy.allow_chart:
                 continue
-            if e.pack and isinstance(e.pack, PartyChartPack) and not policy.allow_party:
+            if e.pack.type == "宴" and not policy.allow_party:
                 continue
             res.append(e)
         return res

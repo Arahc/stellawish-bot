@@ -1,10 +1,11 @@
 from PIL import Image, ImageDraw
 from pathlib import Path
 
-from .font_manager import FontManager as Font
-from .grid_manager import GridManager as Grid
 from .sketchbox import shadowed, truncate, filter
+from .sketchbox import FontManager as Font
+from .sketchbox import GridManager as Grid
 from .songlist_manager import SONG_LIST
+from .static import DIFF_COL_LIST, DIFF_FONT_COL_LIST, PIC_FOOTER_COL, STAR_DXRATE_LIST
 
 PIC_DIR = Path(__file__).parent.parent / "data" / "pics"
 COVER_DIR = PIC_DIR / "covers"
@@ -51,24 +52,6 @@ CONFIG = {
     "logo_size": 200
 }
 
-def rgb(r: int, g: int, b: int) -> tuple[int, int, int]:
-    return (r, g, b)
-
-DIFF_NAME_LIST = ["Basic", "Advanced", "Expert", "Master", "Re:Master"]
-DIFF_COL_LIST = [
-    [ rgb(105, 202, 73)  , rgb(112, 194, 119) , rgb(134, 210, 101) ], # Basic
-    [ rgb(237, 182, 44)  , rgb(234, 194, 62)  , rgb(238, 200, 119) ], # Advanced
-    [ rgb(233, 150, 157) , rgb(223, 159, 159) , rgb(236, 167, 167) ], # Expert
-    [ rgb(157, 98, 203)  , rgb(182, 112, 194) , rgb(198, 151, 206) ], # Master
-    [ rgb(243, 229, 245) , rgb(245, 216, 238) , rgb(251, 237, 247) ]  # Re:Master
-]
-DIFF_FONT_COL_LIST = [
-    rgb(238, 245, 248), # Basic
-    rgb(238, 245, 248), # Advanced
-    rgb(238, 245, 248), # Expert
-    rgb(238, 245, 248), # Master
-    rgb(195, 70, 231)  # Re:Master
-]
 RATING_FILE_DICT = {
     15000: UI_DIR / "ra11.png",
     14500: UI_DIR / "ra10.png",
@@ -82,7 +65,6 @@ RATING_FILE_DICT = {
     1000: UI_DIR / "ra02.png",
     0: UI_DIR / "ra01.png"
 }
-STAR_SCORE_LIST = [84.99, 89.99, 92.99, 94.99, 96.99, 98.99, 99.99, 100.00]
 STAR_FILE_LIST = [
     UI_DIR / "star1.png", # 0 stars 0~84.99
     UI_DIR / "star1.png", # 1 star 85~89.99
@@ -344,8 +326,8 @@ class ScoreCard:
 
         star_score = int(self.grade.dxScore / self.grade.max_dxScore * 10000) / 100
         star_count = 0
-        for i in range(len(STAR_SCORE_LIST)):
-            if star_score > STAR_SCORE_LIST[i]:
+        for i in range(len(STAR_DXRATE_LIST)):
+            if star_score > STAR_DXRATE_LIST[i]:
                 star_count = i + 1
         if star_count > 7:
             star_count = 7
@@ -600,7 +582,7 @@ class Canvas:
 
         self.footer_font = Font.get("MapleMono-CN-Medium.ttf", 20)
 
-        self.col_font = rgb(31, 30, 51)
+        self.col_font = PIC_FOOTER_COL
     
     def render(self, user: UserInfo, b35: list[GradeInfo], b15: list[GradeInfo]) -> Image.Image:
         self._draw_bg()
