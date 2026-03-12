@@ -168,7 +168,7 @@ class SongCard:
         lines = [
             f"* ID: {self.pack.id} ({self.pack.type})",
             f"* BPM: {self.song.bpm}",
-            f"* 版本: {self.pack.version.replace("舞萌 DX", "舞萌DX")}" + (f"〔{VERSION_DICT[self.pack.version]}〕" if VERSION_DICT[self.pack.version] else ""),
+            f"* 版本: {self.pack.version.replace('舞萌 DX', '舞萌DX')}" + (f"〔{VERSION_DICT[self.pack.version]}〕" if VERSION_DICT[self.pack.version] else ""),
             f"* 分类：{self.song.genre}",
             f"* 别名：" + ("暂无" if N_aliases == 0 else "（最多显示 20 条）")
         ]
