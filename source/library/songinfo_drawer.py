@@ -7,7 +7,7 @@ from .sketchbox import shadowed, truncate, wrap
 from .utils import isFontBomb
 from .static import DIFF_NAME_LIST, DIFF_COL_LIST, DIFF_FONT_COL_LIST, PIC_FOOTER_COL, VERSION_DICT
 
-PIC_DIR = Path(__file__).parent / "pics"
+PIC_DIR = Path(__file__).parent.parent / "data" / "pics"
 COVER_DIR = PIC_DIR / "covers"
 
 CONFIG = {
