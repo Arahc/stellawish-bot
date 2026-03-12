@@ -200,7 +200,7 @@ class QueryEngine:
                 continue
             if e.type == InfoTargetType.CHART and not policy.allow_chart:
                 continue
-            if e.pack.type == "宴" and not policy.allow_party:
+            if e.pack and e.pack.type == "宴" and not policy.allow_party:
                 continue
             res.append(e)
         return res
