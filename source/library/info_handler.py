@@ -196,7 +196,7 @@ class QueryEngine:
         for e in entries:
             if e.type == InfoTargetType.SONG and not policy.allow_song:
                 continue
-            if e.type == InfoTargetType.PACK and not policy.allow_pack:
+            if e.type == InfoTargetType.PACK and (not e.pack or e.pack.type != "宴") and not policy.allow_pack:
                 continue
             if e.type == InfoTargetType.CHART and not policy.allow_chart:
                 continue
