@@ -52,7 +52,7 @@ async def _(event: Event):
     target = res[0] 
     song = target.song
     pack = target.pack
-    if pack.info_dat_date == song.info_pic_date:
+    if pack.info_dat_date == pack.info_pic_date:
         await info.send("⏳查询成功，正在发送图片……若长时间未回复，为 QQ 获取图片超时，请稍后再试。")
         url = getURL(f"generate/songinfo/{pack.id}.png")
         await info.finish(MessageSegment.image(url))
@@ -60,5 +60,5 @@ async def _(event: Event):
         pic = generateSongInfo(song, pack)
         await info.send("⏳查询成功，正在发送图片……若长时间未回复，为 QQ 获取图片超时，请稍后再试。")
         url = uploadImg(pic, f"generate/songinfo/{pack.id}.png", cache=False)
-        song.info_pic_date = song.info_dat_date
+        pack.info_pic_date = pack.info_dat_date
         await info.finish(MessageSegment.image(url))
