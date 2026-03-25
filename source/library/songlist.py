@@ -86,7 +86,7 @@ class Song:
     def __init__(self, music:dict):
         self.id = int(music['id']) % 10000
         self.title = music['title']
-        if music['id'] >= 100000:
+        if int(music['id']) >= 100000:
             self.title = music['title'][3:]
         self.artist = music['basic_info']['artist']
         self.bpm = int(music['basic_info']['bpm'])
