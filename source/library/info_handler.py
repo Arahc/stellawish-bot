@@ -150,13 +150,13 @@ class QueryEngine:
                         song=entry.song,
                         pack=entry.song.dxChart
                     ))
-                if entry.song.partyChart and intent.type == "宴":
-                    for p in entry.song.partyChart:
-                        res.append(InfoTarget(
-                            type=InfoTargetType.PACK,
-                            song=entry.song,
-                            pack=p
-                        ))
+                # if entry.song.partyChart:
+                #     for p in entry.song.partyChart:
+                #         res.append(InfoTarget(
+                #             type=InfoTargetType.PACK,
+                #             song=entry.song,
+                #             pack=p
+                #         ))
         return res
 
     def _queryByID(self, intent: QueryIntent) -> list[InfoTarget]:
