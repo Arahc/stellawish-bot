@@ -136,6 +136,7 @@ class QueryEngine:
                 continue
             if entry.chart and not self._matchDiff(intent, entry.chart):
                 continue
+            print(f"✅ {intent.title} 匹配到候选项：{entry}；是否为歌曲级别：{is_song}")
             res.append(entry)
             if is_song:
                 if entry.song.sdChart:
