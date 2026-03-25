@@ -111,7 +111,7 @@ class GradeInfo:
 
         chartpack = res[1]
         chart = chartpack.charts[data['level_index']]
-        self.max_dxScore = (chart.tap + chart.hold + chart.slide + chart.touch + chart.breaks) * 3
+        self.max_dxScore = chart.getMaxDXscore()
 
 class UserInfo:
     rating: int # = the sum of all ra

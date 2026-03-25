@@ -9,7 +9,7 @@ import random
 from ..library.game_manager import GameManager
 from ..library.command_registry import registerChecker, isAnyCommand
 from ..library.utils import fetchChartCover
-from ..library.static import VERSION_DICT, VERSION_LIST
+from ..library.static import VERSION_DICT
 from ..library.songlist_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 
@@ -65,7 +65,7 @@ class Game:
                 f"🎼 bpm：{song.bpm}\n"
                 f"🟪 紫谱难度：{pack.charts[3].diff}\n"
                 f"🟥 红谱难度：{pack.charts[2].diff}\n"
-                f"🕑 谱面版本：{pack.version}" + (f"〔{VERSION_DICT[pack.version]}〕" if VERSION_DICT[pack.version] else "")
+                f"🕑 谱面版本：{pack.version}" + f"〔{VERSION_DICT[pack.version][1]}〕"
             ),
             await fetchChartCover(song.id)
         ])
@@ -98,19 +98,19 @@ class Game:
             f"🎼 bpm：{song.bpm}（{bpm_hint}）\n"
             f"🟪 紫谱难度：{pack.charts[3].diff}（{master_hint}）\n"
             f"🟥 红谱难度：{pack.charts[2].diff}（{expert_hint}）\n"
-            f"🕑 谱面版本：{pack.version}" + (f"〔{VERSION_DICT[pack.version]}〕" if VERSION_DICT[pack.version] else "") + f"（{version_hint}）"
+            f"🕑 谱面版本：{pack.version}" + f"〔{VERSION_DICT[pack.version][1]}〕" + f"（{version_hint}）"
         )
 
     def _pickChart(self) -> dict:
         songlist = list(SONG_LIST.getSongList().values())
         song = random.choice(songlist)
         rand_pool = []
-        while song.sdChart is None and song.dxChart is None:
+        while song.sdPack is None and song.dxPack is None:
             song = random.choice(songlist)
-        if song.sdChart:
-            rand_pool.append(song.sdChart)
-        if song.dxChart:
-            rand_pool.append(song.dxChart)
+        if song.sdPack:
+            rand_pool.append(song.sdPack)
+        if song.dxPack:
+            rand_pool.append(song.dxPack)
         pack = random.choice(rand_pool)
         return song, pack
 
@@ -124,14 +124,7 @@ class Game:
     def _versionCMP(self, guess: str, target: str) -> str:
         if guess == target:
             return "对了"
-        if guess in VERSION_LIST and target in VERSION_LIST:
-            guess_index = VERSION_LIST.index(guess)
-            target_index = VERSION_LIST.index(target)
-            if guess_index < target_index:
-                return "早了"
-            else:
-                return "晚了"
-        raise ValueError("版本比较时出现未知版本名称")
+        return ("早了" if VERSION_DICT[guess][0] < VERSION_DICT[target][0] else "晚了")
 
 @chartel.handle()
 async def _(bot: Bot, event: Event, session: EventSession):

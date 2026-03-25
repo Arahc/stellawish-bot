@@ -3,7 +3,7 @@ from pathlib import Path
 
 from .sketchbox import FontManager as Font
 from .sketchbox import GridManager as Grid
-from .sketchbox import shadowed, truncate, wrap
+from .sketchbox import shadowed, truncate, wrap, alignedWrap
 from .utils import isFontBomb
 from .static import DIFF_NAME_LIST, DIFF_COL_LIST, DIFF_FONT_COL_LIST, PIC_FOOTER_COL, VERSION_DICT
 
@@ -98,8 +98,8 @@ class SongCard:
         draw = ImageDraw.Draw(res)
 
         # title
-        if self.pack.type == "宴":
-            title = self.pack.tag + " " + self.song.title
+        if self.pack.type == "UT":
+            title = f"[{self.pack.tag}] {self.song.title}"
         else:
             title = self.song.title
 
@@ -164,29 +164,16 @@ class SongCard:
                 y += h + 4
         
         # info
+        MAX_N_aliases = 16
         N_aliases = len(self.song.aliases)
         version = self.pack.version
-        plate = VERSION_DICT[version]
-        if version.startswith("舞萌 DX"):
-            version = version.replace("舞萌 DX", "舞萌DX")
-        elif version.startswith("maimai ") and plate != "真":
-            version = version[7:].strip()
+        plate = VERSION_DICT[version][1]
         lines = [
             f"* ID: {self.pack.id} ({self.pack.type})",
             f"* BPM: {self.song.bpm}",
             f"* 版本: {version}" + (f"〔{plate}〕" if plate else ""),
             f"* 分类：{self.song.genre}",
-            f"* 别名：" + ("暂无" if N_aliases == 0 else "（最多显示 20 条）")
         ]
-        if N_aliases > 0:
-            cnt = 0
-            for alias in self.song.aliases:
-                if len(alias) > 11 or isFontBomb(alias):
-                    continue
-                lines.append(f"  - {alias}")
-                cnt += 1
-                if cnt == 20:
-                    break
         y += 24
         for line in lines:
             draw.text(
@@ -197,12 +184,43 @@ class SongCard:
             )
             y += pad_info_H
 
+        lines = alignedWrap(
+            text=f"* 区域：{self.song.map}",
+            max_width=W - 8,
+            font=self.font_info,
+            space=8
+        )
+        for line in lines:
+            draw.text(
+                (0, y),
+                line,
+                font=self.font_info,
+                fill=self.col_font
+            )
+            y += pad_info_H
+        lines = [f"* 别名：" + ("暂无" if N_aliases == 0 else f"（最多显示 {MAX_N_aliases} 条）")]
+        if N_aliases > 0:
+            cnt = 0
+            for alias in self.song.aliases:
+                if len(alias) > 11 or isFontBomb(alias):
+                    continue
+                lines.append(f"  - {alias}")
+                cnt += 1
+                if cnt == MAX_N_aliases:
+                    break
+        for line in lines:
+            draw.text(
+                (0, y),
+                line,
+                font=self.font_info,
+                fill=self.col_font
+            )
+            y += pad_info_H
         return res
 
-def makeNoteTable(chart) -> list[str]:
-    basescore = chart.tap + chart.hold*2 + chart.slide*3 + chart.touch + chart.breaks*5
+def _makeNoteTable(chart) -> list[str]:
+    basescore, rewardscore = chart.getScoreInfo()
     TAPgr = 20 / basescore
-    rewardscore = chart.breaks
     res = ["", "个数", "落", "粉", "绿", "灰"]
 
     res +=["TAP", str(chart.tap), "-"]
@@ -236,12 +254,12 @@ def makeNoteTable(chart) -> list[str]:
     else:
         res += ["BREAK", "0", "-", "-", "-", "-"]
     
-    res += ["TOTAL", str(chart.tap + chart.hold + chart.slide + chart.touch + chart.breaks), "-", "-", "-", "-"]
+    res += ["TOTAL", str(chart.getTotalNotes()), "-", "-", "-", "-"]
 
     return res
 
-def makeRaTable(chart) -> list[str]:
-    basescore = chart.tap + chart.hold*2 + chart.slide*3 + chart.touch + chart.breaks*5
+def _makeRaTable(chart) -> list[str]:
+    basescore, _ = chart.getScoreInfo()
     TAPgr = 20 / basescore
     res = ["评级", "SSS+", "SSS", "SS+", "SS", "S+", "S"]
     if chart.diffid > 4:
@@ -251,10 +269,9 @@ def makeRaTable(chart) -> list[str]:
     res += ["容错", f"{(0.5 / TAPgr):.2f}", f"{(1 / TAPgr):.2f}", f"{(1.5 / TAPgr):.2f}", f"{(2 / TAPgr):.2f}", f"{(3 / TAPgr):.2f}", f"{(4 / TAPgr):.2f}"]
     return res
 
-def breakCalcer(chart) -> list[tuple[float, float]]:
-    basescore = chart.tap + chart.hold*2 + chart.slide*3 + chart.touch + chart.breaks*5
+def _breakCalcer(chart) -> list[tuple[float, float]]:
+    basescore, rewardscore = chart.getScoreInfo()
     TAPgr = 20 / basescore
-    rewardscore = chart.breaks
     return [
         ((0.25 / rewardscore) / TAPgr, (0.5 / rewardscore) / TAPgr), # 落
         ((100 / basescore + 0.6 / rewardscore) / TAPgr, (250 / basescore + 0.6 / rewardscore) / TAPgr), # 粉
@@ -343,7 +360,7 @@ class DiffCard:
             element_w=ele_W,
             element_h=ele_H
         )
-        tab = makeNoteTable(self.chart)
+        tab = _makeNoteTable(self.chart)
         positions = grid.places(len(tab))
         for text, (i, (x, y)) in zip(tab, enumerate(positions)):
             j = i % 6
@@ -374,7 +391,7 @@ class DiffCard:
             element_w=ele_W,
             element_h=ele_H
         )
-        tab = makeRaTable(self.chart)
+        tab = _makeRaTable(self.chart)
         positions = grid.places(len(tab))
         for text, (i, (x, y)) in zip(tab, enumerate(positions)):
             j = i % 7
@@ -390,7 +407,7 @@ class DiffCard:
         W = 450
         H = 220
         line_gap=4
-        data = breakCalcer(self.chart)
+        data = _breakCalcer(self.chart)
         lines = [
             "* 容错单位为 TAP great.",
             f"* 落绝赞等效 {data[0][0]:.3f}~{data[0][1]:.3f} TAP great.",
@@ -463,7 +480,7 @@ class Canvas:
     def _draw_diffcards(self, charts):
         Y_OFF = -6
         left_up = (SongCard.W + self.song_diff_padding - 8, self.margin["top"] - 6)
-        right_bottom = (self.W - self.margin["right"] + 16, self.H - self.margin["bottom"] - 2)
+        right_bottom = (self.W - self.margin["right"] + 14, self.H - self.margin["bottom"] - 2)
         W = right_bottom[0] - left_up[0]
         H = right_bottom[1] - left_up[1]
         bg = Image.new("RGBA", (W, H))

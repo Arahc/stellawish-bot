@@ -1,12 +1,13 @@
 from nonebot import on_message
 from nonebot.rule import to_me
-from nonebot.adapters.qq import Event, Message, MessageSegment
+from nonebot.adapters.qq import Event, MessageSegment
 
 from ..library.command_registry import registerChecker
 from ..library.songlist_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 from ..library.songinfo_drawer import generateSongInfo
 from ..library.upload_img import uploadImg, getURL
+from ..library.songlist_loader import updatePicDate
 
 CANBE_PREFIX = ("/info", "info", "/查歌", "查歌")
 CANBE_SUFFIX = ("是什么歌",)
@@ -52,13 +53,9 @@ async def _(event: Event):
     target = res[0] 
     song = target.song
     pack = target.pack
-    if pack.info_dat_date == pack.info_pic_date:
-        await info.send("⏳查询成功，正在发送图片……若长时间未回复，为 QQ 获取图片超时，请稍后再试。")
-        url = getURL(f"generate/songinfo/{pack.id}.png")
-        await info.finish(MessageSegment.image(url))
+    await info.send(f"⏳查询成功，正在生成图片……若长时间未回复，为图片上传超时，请稍后再试。")
+    if updatePicDate(pack.id):
+        url = uploadImg(generateSongInfo(song, pack), f"generate/songinfo/{pack.id}.png", cache=False)
     else:
-        pic = generateSongInfo(song, pack)
-        await info.send("⏳查询成功，正在发送图片……若长时间未回复，为 QQ 获取图片超时，请稍后再试。")
-        url = uploadImg(pic, f"generate/songinfo/{pack.id}.png", cache=False)
-        pack.info_pic_date = pack.info_dat_date
-        await info.finish(MessageSegment.image(url))
+        url = getURL(f"generate/songinfo/{pack.id}.png")
+    await info.finish(MessageSegment.image(url))

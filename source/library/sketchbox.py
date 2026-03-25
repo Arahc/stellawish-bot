@@ -69,6 +69,25 @@ def wrap(text: str, max_width: int, font) -> list[str]:
         lines.append(current)
     return lines
 
+def alignedWrap(text: str, max_width: int, font, space: int) -> list[str]:
+    # add spaces to the 2nd and following lines to make them aligned with the first line
+    draw = ImageDraw.Draw(Image.new("RGBA", (1, 1)))
+    lines = []
+    current = ""
+    for ch in text:
+        test = current + ch
+        bbox = draw.textbbox((0, 0), test, font=font)
+        w = bbox[2] - bbox[0]
+        if w <= max_width:
+            current = test
+        else:
+            lines.append(current)
+            current = " " * space + ch
+    if current:
+        lines.append(current)
+    return lines
+
+
 def filter(img: Image.Image, color: tuple[int, int, int, int]) -> Image.Image:
     if img.mode != "RGBA":
         raise ValueError("Image must be RGBA")

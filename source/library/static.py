@@ -6,42 +6,52 @@ def rgb(r: int, g: int, b: int) -> tuple[int, int, int]:
 
 DIVEFISH_API_BASE_URL = "https://www.diving-fish.com/api/maimaidxprober"
 
-DIVEFISH_ALL_CHARTS_API_URL = DIVEFISH_API_BASE_URL + "/music_data"
 DIVEFISH_B50_API_URL = DIVEFISH_API_BASE_URL + "/query/player"
 
-
-LXNS_ALL_ALIASES_API_URL = "https://maimai.lxns.net/api/v0/maimai/alias/list"
+LXNS_API_BASE_URL = "https://maimai.lxns.net/api/v0/maimai"
+LXNS_ALL_CHARTS_API_URL = LXNS_API_BASE_URL + "/song/list"
+LXNS_ALL_ALIASES_API_URL = LXNS_API_BASE_URL + "/alias/list"
 
 BOT_PIC_DOMAIN = os.getenv("DOMAIN_BASE")
 
 DATA_PATH = Path(__file__).parent.parent / "data"
 
-SONG_LIST_PATH = DATA_PATH / "all_charts.json"
-SONG_LIST_ETAG_PATH = DATA_PATH / "all_charts.etag"
+SONG_INFO_PATH = DATA_PATH / "song_info.json"
+
 DIVEFISH_BIND_PATH = DATA_PATH / "divefish_bind.json"
 
 VERSION_DICT = {
-    "maimai": "真",
-    "maimai PLUS": "真",
-    "maimai GreeN": "超",
-    "maimai GreeN PLUS": "檄",
-    "maimai ORANGE": "橙",
-    "maimai ORANGE PLUS": "晓",
-    "maimai PiNK": "桃",
-    "maimai PiNK PLUS": "樱",
-    "maimai MURASAKi": "紫",
-    "maimai MURASAKi PLUS": "堇",
-    "maimai MiLK": "白",
-    "maimai MiLK PLUS": "雪",
-    "maimai FiNALE": "辉",
-    "舞萌 DX": "熊华",
-    "舞萌 DX 2021": "爽煌",
-    "舞萌 DX 2022": "宙星",
-    "舞萌 DX 2023": "祭祝",
-    "舞萌 DX 2024": "双宴",
-    "舞萌 DX 2025": "镜"
+    "maimai": (10000, "真"),
+    "maimai PLUS": (11000, "真"),
+    "GreeN": (12000, "超"),
+    "GreeN PLUS": (13000, "檄"),
+    "ORANGE": (14000, "橙"),
+    "ORANGE PLUS": (15000, "晓"),
+    "PiNK": (16000, "桃"),
+    "PiNK PLUS": (17000, "樱"),
+    "MURASAKi": (18000, "紫"),
+    "MURASAKi PLUS": (18500, "堇"),
+    "MiLK": (19000, "白"),
+    "MiLK PLUS": (19500, "雪"),
+    "FiNALE": (19900, "辉"),
+    "舞萌DX": (20000, "熊华"),
+    "舞萌DX 2021": (21000, "爽煌"),
+    "舞萌DX 2022": (22000, "宙星"),
+    "舞萌DX 2023": (23000, "祭祝"),
+    "舞萌DX 2024": (24000, "双宴"),
+    "舞萌DX 2025": (25000, "镜"),
+    "舞萌DX 2026": (26000, "彩")
 }
-VERSION_LIST = list(VERSION_DICT.keys())
+
+GENRE_DICT = {
+    "POPSアニメ": "流行&动漫",
+    "niconicoボーカロイド": "niconico&VOCALOID™",
+    "東方Project": "东方Project",
+    "ゲームバラエティ": "其他游戏",
+    "maimai": "舞萌",
+    "オンゲキCHUNITHM": "音击/中二节奏",
+    "宴会場": "宴会场"
+}
 
 RATING_LIST = [
     (100.5, "SSS+", 0.224),
@@ -71,9 +81,15 @@ RATING_LIST = [
 
 INFO_QUERY_PACK_KEY = {
     "sd": "SD",
+    "Sd": "SD",
+    "sD": "SD",
+    "SD": "SD",
     "标": "SD",
     "dx": "DX",
-    "宴": "宴"
+    "Dx": "DX",
+    "dX": "DX",
+    "DX": "DX",
+    "宴": "UT"
 }
 INFO_QUERY_DIFF_KEY = {
     "绿": 0,

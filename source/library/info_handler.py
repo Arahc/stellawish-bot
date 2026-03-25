@@ -16,7 +16,7 @@ class QueryPolicy:
 @dataclass
 class QueryIntent:
     title: Optional[str] = None
-    type: Optional[str] = None # "SD", "DX", "宴"
+    type: Optional[str] = None # "SD", "DX", "UT"
     diff: Optional[int] = None # 绿 0, 黄 1, 红 2, 紫 3, 白 4
     id: Optional[int] = None
 
@@ -138,17 +138,17 @@ class QueryEngine:
                 continue
             res.append(entry)
             if is_song:
-                if entry.song.sdChart:
+                if entry.song.sdPack:
                     res.append(InfoTarget(
                         type=InfoTargetType.PACK,
                         song=entry.song,
-                        pack=entry.song.sdChart
+                        pack=entry.song.sdPack
                     ))
-                if entry.song.dxChart:
+                if entry.song.dxPack:
                     res.append(InfoTarget(
                         type=InfoTargetType.PACK,
                         song=entry.song,
-                        pack=entry.song.dxChart
+                        pack=entry.song.dxPack
                     ))
         return res
 
@@ -157,7 +157,16 @@ class QueryEngine:
         song = self.songlist.get(sid, None)
         if not song:
             return []
-        pack = song.chartID.get(intent.id, None)
+        pack = None
+        if song.sdPack and song.sdPack.id == intent.id:
+            pack = song.sdPack
+        elif song.dxPack and song.dxPack.id == intent.id:
+            pack = song.dxPack
+        else:
+            for p in song.utPack:
+                if p.id == intent.id:
+                    pack = p
+                    break
         if not pack:
             return []
         if intent.type:
@@ -187,11 +196,11 @@ class QueryEngine:
     def _applyPolicy(self, entries: list[InfoTarget], policy: QueryPolicy) -> list[InfoTarget]:
         res = []
         for e in entries:
-            if e.pack and e.pack.type == "宴" and not policy.allow_party:
+            if e.pack and e.pack.type == "UT" and not policy.allow_party:
                 continue
             if e.type == InfoTargetType.SONG and not policy.allow_song:
                 continue
-            if e.type == InfoTargetType.PACK and e.pack.type != "宴" and not policy.allow_pack:
+            if e.type == InfoTargetType.PACK and e.pack.type != "UT" and not policy.allow_pack:
                 continue
             if e.type == InfoTargetType.CHART and not policy.allow_chart:
                 continue

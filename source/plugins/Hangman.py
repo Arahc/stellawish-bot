@@ -141,7 +141,7 @@ class Game:
         songs = SONG_LIST.getSongList().values()
         all_valid_titles = [
             s.title
-            for s in songs if (s.sdChart or s.dxChart) and self._isValidTitle(s.title)
+            for s in songs if (s.sdPack or s.dxPack) and self._isValidTitle(s.title)
         ]
         used_titles = set()
         for _ in range(N):

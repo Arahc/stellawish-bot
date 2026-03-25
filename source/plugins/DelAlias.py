@@ -4,7 +4,7 @@ from nonebot.adapters.qq import Event, Bot
 from nonebot.permission import SUPERUSER
 
 from ..library.command_registry import registerChecker
-from ..library.load_charts import delAlias
+from ..library.songlist_loader import delAlias
 from ..library.songlist_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 
