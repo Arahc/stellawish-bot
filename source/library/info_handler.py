@@ -151,13 +151,13 @@ class QueryEngine:
                         song=entry.song,
                         pack=entry.song.dxChart
                     ))
-                if entry.song.partyChart:
-                    for p in entry.song.partyChart:
-                        res.append(InfoTarget(
-                            type=InfoTargetType.PACK,
-                            song=entry.song,
-                            pack=p
-                        ))
+                # if entry.song.partyChart:
+                #     for p in entry.song.partyChart:
+                #         res.append(InfoTarget(
+                #             type=InfoTargetType.PACK,
+                #             song=entry.song,
+                #             pack=p
+                #         ))
         return res
 
     def _queryByID(self, intent: QueryIntent) -> list[InfoTarget]:
@@ -195,13 +195,13 @@ class QueryEngine:
     def _applyPolicy(self, entries: list[InfoTarget], policy: QueryPolicy) -> list[InfoTarget]:
         res = []
         for e in entries:
+            if e.pack and e.pack.type == "宴" and not policy.allow_party:
+                continue
             if e.type == InfoTargetType.SONG and not policy.allow_song:
                 continue
-            if e.type == InfoTargetType.PACK and (not e.pack or e.pack.type != "宴") and not policy.allow_pack:
+            if e.type == InfoTargetType.PACK and e.pack.type != "宴" and not policy.allow_pack:
                 continue
             if e.type == InfoTargetType.CHART and not policy.allow_chart:
-                continue
-            if e.pack and e.pack.type == "宴" and not policy.allow_party:
                 continue
             res.append(e)
         return res
