@@ -150,13 +150,13 @@ class QueryEngine:
                         song=entry.song,
                         pack=entry.song.dxChart
                     ))
-                # if entry.song.partyChart:
-                #     for p in entry.song.partyChart:
-                #         res.append(InfoTarget(
-                #             type=InfoTargetType.PACK,
-                #             song=entry.song,
-                #             pack=p
-                #         ))
+                if entry.song.partyChart:
+                    for p in entry.song.partyChart:
+                        res.append(InfoTarget(
+                            type=InfoTargetType.PACK,
+                            song=entry.song,
+                            pack=p
+                        ))
         return res
 
     def _queryByID(self, intent: QueryIntent) -> list[InfoTarget]:
@@ -209,6 +209,7 @@ class QueryEngine:
         res = []
         seen = set()
         intents = QueryIntentParser.parse(text)
+        print(f"🔍 查询意图：{intents}")
         for intent in intents:
             if intent.id is not None:
                 entries = self._queryByID(intent)
