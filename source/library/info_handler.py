@@ -136,7 +136,6 @@ class QueryEngine:
                 continue
             if entry.chart and not self._matchDiff(intent, entry.chart):
                 continue
-            print(f"✅ {intent.title} 匹配到候选项：{entry}；是否为歌曲级别：{is_song}")
             res.append(entry)
             if is_song:
                 if entry.song.sdChart:
@@ -151,13 +150,6 @@ class QueryEngine:
                         song=entry.song,
                         pack=entry.song.dxChart
                     ))
-                # if entry.song.partyChart:
-                #     for p in entry.song.partyChart:
-                #         res.append(InfoTarget(
-                #             type=InfoTargetType.PACK,
-                #             song=entry.song,
-                #             pack=p
-                #         ))
         return res
 
     def _queryByID(self, intent: QueryIntent) -> list[InfoTarget]:
@@ -195,7 +187,6 @@ class QueryEngine:
     def _applyPolicy(self, entries: list[InfoTarget], policy: QueryPolicy) -> list[InfoTarget]:
         res = []
         for e in entries:
-            print(f"🔍 应用查询策略过滤候选项：{e}（选项有无曲包：{bool(e.pack)}，若有，类型：{e.pack.type if e.pack else None}）")
             if e.pack and e.pack.type == "宴" and not policy.allow_party:
                 continue
             if e.type == InfoTargetType.SONG and not policy.allow_song:
@@ -211,7 +202,6 @@ class QueryEngine:
         res = []
         seen = set()
         intents = QueryIntentParser.parse(text)
-        print(f"🔍 查询意图：{intents}")
         for intent in intents:
             if intent.id is not None:
                 entries = self._queryByID(intent)

@@ -46,9 +46,14 @@ class ChartPack:
     tag: str = ""
     # charts: list[Chart] = []
 
+    info_dat_date: str = "1111-11-11" # last time this song's info updated
+    info_pic_date: str = "0000-00-00" # which date the latest picture info of this song was based on. Use the two fields to determine whether the song's picture info needs to be updated
+
     def __init__(self, music:dict):
         self.id = int(music['id'])
         self.version = music['basic_info']['from']
+        self.info_dat_date = music.get('info_dat_date', "1111-11-11")
+        self.info_pic_date = music.get('info_pic_date', "0000-00-00")
         if self.id >= 100000:
             self.tag = music['title'][:3]
             self.type = "宴"
@@ -57,14 +62,14 @@ class ChartPack:
             self.type = music['type']
             self.charts = [Chart(music['charts'][i], float(music['ds'][i]), i) for i in range(len(music['charts']))]
 
-    def exportJSON(self) -> tuple[list[dict], list[float | str], int, str, str]:
+    def exportJSON(self) -> tuple[list[dict], list[float | str], int, str, str, str, str]:
         charts = []
         diffs = []
         for chart in self.charts:
             chart_entry, diff = chart.exportJSON()
             charts.append(chart_entry)
             diffs.append(diff)
-        return charts, diffs, self.id, self.version, self.tag
+        return charts, diffs, self.id, self.version, self.tag, self.info_dat_date, self.info_pic_date
 
 class Song:
     id: int = 0
@@ -77,8 +82,6 @@ class Song:
     dxChart: ChartPack | None = None
     # partyChart: list[ChartPack] = []
 
-    info_dat_date: str = "1111-11-11" # last time this song's info updated
-    info_pic_data: str = "0000-00-00" # which date the latest picture info of this song was based on. Use the two fields to determine whether the song's picture info needs to be updated
 
     def __init__(self, music:dict):
         self.id = int(music['id']) % 10000
@@ -92,8 +95,6 @@ class Song:
         self.partyChart = []
         self.chartID = {}
         self.mergeChart(music)
-        self.info_dat_date = music.get('info_dat_date', "1111-11-11")
-        self.info_pic_data = music.get('info_pic_data', "0000-00-00")
 
     def mergeChart(self, music:dict):
         if int(music['id']) >= 100000:
@@ -112,7 +113,7 @@ class Song:
     def exportJSON(self) -> list[dict]:
         res = []
         if self.sdChart:
-            charts, ds, id, version, tag = self.sdChart.exportJSON()
+            charts, ds, id, version, tag, datDate, picDate = self.sdChart.exportJSON()
             res.append({
                 "id": id,
                 "type": "SD",
@@ -126,11 +127,11 @@ class Song:
                 "alias": self.aliases,
                 "ds": ds,
                 "charts": charts,
-                "info_dat_date": self.info_dat_date,
-                "info_pic_data": self.info_pic_data
+                "info_dat_date": datDate,
+                "info_pic_date": picDate
             })
         if self.dxChart:
-            charts, ds, id, version, tag = self.dxChart.exportJSON()
+            charts, ds, id, version, tag, datDate, picDate = self.dxChart.exportJSON()
             res.append({
                 "id": id,
                 "type": "DX",
@@ -144,12 +145,12 @@ class Song:
                 "alias": self.aliases,
                 "ds": ds,
                 "charts": charts,
-                "info_dat_date": self.info_dat_date,
-                "info_pic_data": self.info_pic_data
+                "info_dat_date": datDate,
+                "info_pic_date": picDate
             })
         if self.partyChart:
             for party in self.partyChart:
-                charts, level, id, version, tag = party.exportJSON()
+                charts, level, id, version, tag, datDate, picDate = party.exportJSON()
                 res.append({
                     "id": id,
                     "type": "宴",
@@ -163,8 +164,8 @@ class Song:
                     "alias": self.aliases,
                     "level": level,
                     "charts": charts,
-                    "info_dat_date": self.info_dat_date,
-                    "info_pic_data": self.info_pic_data
+                    "info_dat_date": datDate,
+                    "info_pic_date": picDate
                 })
         return res
 
