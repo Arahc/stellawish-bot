@@ -1,10 +1,10 @@
 from nonebot import on_message
 from nonebot.rule import to_me
-from nonebot.adapters.qq import Event, Message, MessageSegment
+from nonebot.adapters.qq import Event, MessageSegment
 
 import httpx
 
-from ..library.user_info import getUserInfo, canFetchB50
+from ..library.userinfo_manager import USER_INFO
 from ..library.command_registry import registerChecker
 from ..library.static import DIVEFISH_B50_API_URL as B50_API_URL
 from ..library.b50_drawer import generateB50
@@ -25,10 +25,10 @@ b50 = on_message(rule=to_me() & isValidCommand, priority=1)
 @b50.handle()
 async def _(event: Event):
     open_id = event.get_user_id()
-    if not canFetchB50(open_id):
+    user = USER_INFO.get(open_id)
+    if not user.canB50():
         await b50.finish("❌查询失败：你还没有绑定 QQ 号，请先使用 /bind <QQ 号> 进行绑定！")
-    user_info = getUserInfo(open_id)
-    qq_id = user_info.get('qqID')
+    qq_id = user.qqID
 
     async with httpx.AsyncClient() as client:
         try:

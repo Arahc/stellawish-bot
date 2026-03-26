@@ -2,10 +2,13 @@ from nonebot import on_startswith
 from nonebot.rule import to_me
 from nonebot.adapters.qq import Event
 
-from ..library.user_info import addInfo, getUserInfo
+from ..library.userinfo_manager import USER_INFO
+from ..library.userinfo_loader import setUserInfo
 from ..library.command_registry import registerChecker
 
-CANBE_PREFIX = ("/bind", "bind", "/绑定水鱼", "绑定水鱼", "/绑水鱼", "绑水鱼")
+import re
+
+CANBE_PREFIX = ("/bind", "bind", "/绑定", "绑定", "/绑", "绑")
 
 @registerChecker
 def isCommandText(text: str) -> bool:
@@ -15,9 +18,66 @@ def isCommandText(text: str) -> bool:
 bind = on_startswith(CANBE_PREFIX, rule=to_me(), ignorecase=True, priority=8)
 
 def isValidQQID(qqid: str) -> bool:
-    return qqid.isdigit() and 10000 <= int(qqid) <= 999999999999
-def isValidToken(token: str) -> bool:
-    return len(token) >= 20
+    return re.fullmatch(r"[1-9][0-9]{4,14}", qqid) is not None
+def isValidDFToken(token: str) -> bool:
+    return re.fullmatch(r"[a-zA-Z0-9]{20,}", token) is not None
+def isValidLXID(lxid: str) -> bool:
+    return re.fullmatch(r"[0-9]{10,}", lxid) is not None
+def isValidB50Source(source: str) -> bool:
+    return source in ("sy", "lx", "水鱼", "落雪")
+
+ARG_MAP = {
+    "qq": (isValidQQID, "qqID"),
+    "sy": (isValidDFToken, "syToken"),
+    "水鱼": (isValidDFToken, "syToken"),
+    "lx": (isValidLXID, "lxID"),
+    "落雪": (isValidLXID, "lxID"),
+    "src": (isValidB50Source, "b50Source"),
+    "源": (isValidB50Source, "b50Source"),
+    "数据源": (isValidB50Source, "b50Source")
+}
+
+def applyArgs(info, text: str) -> tuple[bool, str]:
+    tokens = text.split()
+    if len(tokens) % 2 != 0:
+        return False, "❌参数格式错误！请提供正确的参数，格式如：\n/bind qq <QQ号> sy <水鱼Token> lx <落雪ID> b50source <b50数据来源（sy或lx）>"
+    for i in range(0, len(tokens), 2):
+        key = tokens[i].lower()
+        val = tokens[i + 1]
+        if key not in ARG_MAP:
+            return False, f"❌未知参数：{key}"
+        validator, field = ARG_MAP[key]
+        if not validator(val):
+            return False, f"❌参数 {key} 格式错误！"
+
+        if field == "b50Source": # special check
+            val = "sy" if val in ("sy", "水鱼") else "lx"
+
+        setattr(info, field, val)
+    return True, "✅绑定成功！当前绑定信息状态如下：\n"
+
+DUMP_MAP = {
+    "qqID": "QQ 号",
+    "syToken": "水鱼 Token",
+    "lxID": "落雪好友码",
+    "b50Source": "b50 数据源"
+}
+
+def dumpInfo(info) -> str:
+    lines = []
+    for key, val in info.__dict__.items():
+        if key == "openID":
+            continue
+        elif val is None:
+            lines.append(f"❌{DUMP_MAP.get(key, key)}：未绑定")
+        elif key == "syToken" or key == "lxID":
+            lines.append(f"✅{DUMP_MAP.get(key, key)}：已绑定（不公开）")
+        elif key == "b50Source":
+            source_name = "水鱼" if val == "sy" else "落雪"
+            lines.append(f"✅{DUMP_MAP.get(key, key)}：{source_name}")
+        else:
+            lines.append(f"✅{DUMP_MAP.get(key, key)}：{val}")
+    return "\n".join(lines)
 
 @bind.handle()
 async def _(event: Event):
@@ -28,43 +88,14 @@ async def _(event: Event):
             text = text[len(pre):].strip()
             break
     open_id = event.get_user_id()
-    user_info = getUserInfo(open_id)
+    info = USER_INFO.get(open_id)
     if not text:
-        if not user_info:
-            await bind.finish("❌你还没有绑定任何信息，请提供 QQ 号和水鱼 Token 进行绑定！")
-        if not user_info.get('qqID'):
-            await bind.finish("❌你还没有绑定 QQ 号，请提供 QQ 号进行绑定！")
-        if not user_info.get('token'):
-            await bind.finish("❌你还没有绑定水鱼 Token，请提供水鱼 Token 进行绑定！")
-        await bind.finish(
-            "你的信息绑定情况如下：\n"+
-            f"✅QQ 号：{user_info['qqID']}\n"+
-            f"✅水鱼 Token（不公开）\n"+
-            "如需修改，只需重新发送绑定命令即可。"
-        )
-    splits_by_space = text.split()
-    if len(splits_by_space) == 2:
-        qq_id = splits_by_space[0]
-        token = splits_by_space[1]
-        if not isValidQQID(qq_id):
-            await bind.finish("❌绑定失败！请提供合法的 QQ 号。")
-    elif len(splits_by_space) == 1:
-        text = splits_by_space[0]
-        if isValidQQID(text):
-            qq_id = text
-            token = None
-        elif len(text) >= 10:
-            qq_id = None
-            token = text
-        else:
-            await bind.finish("❌绑定失败！请提供合法的 QQ 号或水鱼 Token。")
-    else:
-        await bind.finish("❌绑定失败！请提供正确的 QQ 号和水鱼 Token，格式如：\n/bind <QQ号> <token>")
-    addInfo(open_id, qq_id, token)
-    user_info = getUserInfo(open_id)
-    await bind.finish(
-        "绑定成功！你的信息绑定情况如下：\n"+
-        (f"✅QQ 号：{user_info['qqID']}\n" if user_info.get('qqID') else "❌QQ 号\n")+
-        (f"✅水鱼 Token（不公开）\n" if user_info.get('token') else "❌水鱼 Token\n")+
-        f"若您发送了 Token，建议撤回绑定消息，以免 Token 泄露。"
-    )
+        text = "你的绑定信息如下：\n" + dumpInfo(info)
+        await bind.finish(text)
+    status, message = applyArgs(info, text)
+    if not status:
+        await bind.finish(message)
+    setUserInfo(open_id, info)
+    USER_INFO.set(info)
+    message += dumpInfo(info)
+    await bind.finish(message)

@@ -15,10 +15,8 @@ LXNS_ALL_ALIASES_API_URL = LXNS_API_BASE_URL + "/alias/list"
 BOT_PIC_DOMAIN = os.getenv("DOMAIN_BASE")
 
 DATA_PATH = Path(__file__).parent.parent / "data"
-
 SONG_INFO_PATH = DATA_PATH / "song_info.json"
-
-DIVEFISH_BIND_PATH = DATA_PATH / "divefish_bind.json"
+USER_INFO_PATH = DATA_PATH / "user_info.json"
 
 VERSION_DICT = {
     "maimai": (10000, "真"),

@@ -5,7 +5,7 @@ from nonebot.adapters.qq import Event, Bot
 from maimai_py import MaimaiClient, PlayerIdentifier, ArcadeProvider
 
 from ..library.command_registry import registerChecker
-from ..library.user_info import getUserInfo
+from ..library.userinfo_manager import USER_INFO
 
 CANBE_PREFIX = ("/update", "update", "/舞萌更新", "舞萌更新", "/传水鱼", "传水鱼")
 
@@ -27,15 +27,15 @@ async def _(bot: Bot, event: Event):
             text = text[len(pre):].strip()
             break
     open_id = event.get_user_id()
-    user_info = getUserInfo(open_id)
-    if not user_info:
+    user = USER_INFO.get(open_id)
+    if not user:
         await update.finish("❌你还没有绑定任何信息，请先绑定水鱼 Token！")
-    if not user_info.get('token'):
+    if not user.syToken:
         await update.finish("❌你还没有绑定水鱼 Token，请先绑定水鱼 Token！")
     if not text:
         await update.finish("❌请提供舞萌公众号二维码代码！格式：/update <code>")
     maimai = MaimaiClient()
-    token = user_info['token']
+    token = user.syToken
     code = text
     account = await maimai.qrcode(code)
     scores = await maimai.scores(account, provider=ArcadeProvider())
