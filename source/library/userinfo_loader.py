@@ -28,7 +28,7 @@ def setUserInfo(openID: str, data: dict | UserInfo):
             qqID=data.get('qqID'),
             syToken=data.get('syToken'),
             lxID=data.get('lxID'),
-            b50Source=data.get('b50Source')
+            dataSource=data.get('dataSource')
         )
     USER_INFO.set(user_info)
     saveUserInfo(USER_INFO.exportJSON())

@@ -4,8 +4,10 @@ from pathlib import Path
 from .sketchbox import shadowed, truncate, filter
 from .sketchbox import FontManager as Font
 from .sketchbox import GridManager as Grid
-from .songlist_manager import SONG_LIST
 from .static import DIFF_COL_LIST, DIFF_FONT_COL_LIST, PIC_FOOTER_COL, STAR_DXRATE_LIST
+
+from .score import ScoreList, Score
+from .player import Player
 
 PIC_DIR = Path(__file__).parent.parent / "data" / "pics"
 COVER_DIR = PIC_DIR / "covers"
@@ -77,61 +79,26 @@ STAR_FILE_LIST = [
 ]
 
 class GradeInfo:
-    title: str
-    type: str
-    id: int
-    ra: int
-    rate: str
-    level_id: str
-    diff: float
-    acc: float
-    fc: str | None = None
-    fs: str | None = None
-    dxScore: int
-    max_dxScore: int
-    count: int
-
-    def __init__(self, data: dict, count: int):
-        self.title = data['title']
-        self.type = data['type']
-        self.id = int(data['song_id'])
-        self.ra = int(data['ra'])
-        self.rate = data['rate']
-        self.level_id = data['level_index']
-        self.diff = float(data['ds'])
-        self.acc = float(data['achievements'])
-        self.fc = data['fc']
-        self.fs = data['fs']
-        self.dxScore = int(data['dxScore'])
+    def __init__(self, score: Score, count: int):
+        self.title = score.song.title
+        self.type = score.pack.type
+        self.id = score.pack.id
+        self.ra = score.getRating()
+        self.level_id = score.chart.diffid
+        self.diff = score.chart.diff
+        self.acc = score.acc
+        self.fc = score.fc
+        self.fs = score.fs
+        self.dxScore = score.dxScore
+        self.max_dxScore = score.chart.getMaxDXscore()
         self.count = count
 
-        res = SONG_LIST.getSongList().findByID(self.id)
-        if not res:
-            raise ValueError(f"Song ID {self.id} not found in song list")
-
-        chartpack = res[1]
-        chart = chartpack.charts[data['level_index']]
-        self.max_dxScore = chart.getMaxDXscore()
-
 class UserInfo:
-    rating: int # = the sum of all ra
-    ra35: int # = the sum of top 35 ra
-    ra15: int # = the sum of recent 15 ra
-    name: str
-    plate: str | None
-    grade: int
-
-    def __init__(self, data: dict):
-        self.rating = int(data['rating'])
-        self.name = data['nickname']
-        self.plate = data.get('plate', None)
-        self.grade = int(data['additional_rating'])
-        self.ra35 = 0
-        self.ra15 = 0
-        for c in data['charts']['sd']:
-            self.ra35 += int(c['ra'])
-        for c in data['charts']['dx']:
-            self.ra15 += int(c['ra'])
+    def __init__(self, player: Player, ra35: int, ra15: int):
+        self.name = player.name
+        self.rating = ra35 + ra15
+        self.ra35 = ra35
+        self.ra15 = ra15
 
 class ScoreCard:
     W: int = CONFIG['score_card']['W']
@@ -669,10 +636,10 @@ class Canvas:
             fill=self.col_font
         )
 
-def generateB50(data: dict) -> Image.Image:
-    user_info = UserInfo(data)
-    b35_info = [GradeInfo(s, i + 1) for i, s in enumerate(data['charts']['sd'])]
-    b15_info = [GradeInfo(s, i + 1) for i, s in enumerate(data['charts']['dx'])]
+def generateB50(player: Player, b35: ScoreList, b15: ScoreList) -> Image.Image:
+    user_info = UserInfo(player, b35.ra, b15.ra)
+    b35_info = [GradeInfo(s, i + 1) for i, s in enumerate(b35)]
+    b15_info = [GradeInfo(s, i + 1) for i, s in enumerate(b15)]
 
     canvas = Canvas()
     img = canvas.render(user_info, b35_info, b15_info)

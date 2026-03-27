@@ -10,7 +10,7 @@ from ..library.game_manager import GameManager
 from ..library.command_registry import registerChecker, isAnyCommand
 from ..library.utils import fetchChartCover
 from ..library.static import VERSION_DICT
-from ..library.songlist_manager import SONG_LIST
+from ..library.song_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 
 VALIDCOMMAND = ("/chartel", "chartel", "/猜歌", "猜歌", "/舞萌猜歌", "舞萌猜歌")

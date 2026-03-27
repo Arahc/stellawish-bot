@@ -3,7 +3,7 @@ from typing import Optional
 from enum import Enum, auto
 import re
 
-from .songlist import Song, ChartPack, Chart, SongList
+from .song import Song, ChartPack, Chart, SongList
 from .static import INFO_QUERY_PACK_KEY, INFO_QUERY_DIFF_KEY
 
 @dataclass

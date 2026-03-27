@@ -8,6 +8,7 @@ DIVEFISH_API_BASE_URL = "https://www.diving-fish.com/api/maimaidxprober"
 
 DIVEFISH_B50_API_URL = DIVEFISH_API_BASE_URL + "/query/player"
 
+LXNS_API_SECRET = os.getenv("LXNS_API_SECRET")
 LXNS_API_BASE_URL = "https://maimai.lxns.net/api/v0/maimai"
 LXNS_ALL_CHARTS_API_URL = LXNS_API_BASE_URL + "/song/list"
 LXNS_ALL_ALIASES_API_URL = LXNS_API_BASE_URL + "/alias/list"

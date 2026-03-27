@@ -4,8 +4,8 @@ from nonebot.adapters.qq import Event, Bot
 from nonebot.permission import SUPERUSER
 
 from ..library.command_registry import registerChecker
-from ..library.songlist_loader import addAlias
-from ..library.songlist_manager import SONG_LIST
+from ..library.song_loader import addAlias
+from ..library.song_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 
 CANBE_PREFIX = ("/addalias", "addalias", "/加别名", "加别名", "/加别称", "加别称")

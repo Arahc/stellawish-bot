@@ -3,11 +3,11 @@ from nonebot.rule import to_me
 from nonebot.adapters.qq import Event, MessageSegment
 
 from ..library.command_registry import registerChecker
-from ..library.songlist_manager import SONG_LIST
+from ..library.song_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 from ..library.songinfo_drawer import generateSongInfo
 from ..library.upload_img import uploadImg, getURL
-from ..library.songlist_loader import updatePicDate
+from ..library.song_loader import updatePicDate
 
 CANBE_PREFIX = ("/info", "info", "/查歌", "查歌")
 CANBE_SUFFIX = ("是什么歌",)

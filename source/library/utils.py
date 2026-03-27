@@ -1,6 +1,8 @@
 from nonebot.adapters.qq import MessageSegment
 import os
 
+from .static import LXNS_API_BASE_URL
+
 def isFontBomb(text: str) -> bool:
     for c in text:
         code = ord(c)
@@ -39,3 +41,15 @@ async def fetchChartCover(id: int | str, noexcept: bool = False) -> MessageSegme
                 return MessageSegment.text("\n⚠️获取封面失败（请求被拒绝，请联系开发者！）")
             else:
                 return MessageSegment.text("\n⚠️获取封面失败（封面不存在，请联系开发者！）")
+
+import hashlib
+def shorterID(id: str, dig: int = 8) -> str:
+    h = hashlib.md5(id.encode()).hexdigest()
+    num = int(h, 16) % (10 ** dig)
+    return f"{num:0{dig}d}"
+
+def LXNS_B50_API(code: str) -> str:
+    return f"{LXNS_API_BASE_URL}/player/{code}/bests"
+
+def LXNS_PROFILE_API(code: str) -> str:
+    return f"{LXNS_API_BASE_URL}/player/{code}"

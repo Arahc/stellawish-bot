@@ -6,8 +6,8 @@ from datetime import datetime
 from .static import LXNS_ALL_CHARTS_API_URL as CHARTS_API_URL
 from .static import LXNS_ALL_ALIASES_API_URL as ALIASES_API_URL
 from .static import SONG_INFO_PATH
-from .songlist_manager import SONG_LIST
-from .songlist import SongList
+from .song_manager import SONG_LIST
+from .song import SongList
 
 # ----------- File -----------
 

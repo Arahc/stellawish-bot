@@ -3,7 +3,7 @@ from nonebot.rule import to_me
 from nonebot.adapters.qq import Event
 
 from ..library.command_registry import registerChecker
-from ..library.songlist_manager import SONG_LIST
+from ..library.song_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 
 CANBE_PREFIX = ("/alias", "alias", "/查别名", "查别名", "/查别称", "查别称")

@@ -23,7 +23,7 @@ def isValidDFToken(token: str) -> bool:
     return re.fullmatch(r"[a-zA-Z0-9]{20,}", token) is not None
 def isValidLXID(lxid: str) -> bool:
     return re.fullmatch(r"[0-9]{10,}", lxid) is not None
-def isValidB50Source(source: str) -> bool:
+def isValidSource(source: str) -> bool:
     return source in ("sy", "lx", "水鱼", "落雪")
 
 ARG_MAP = {
@@ -32,9 +32,9 @@ ARG_MAP = {
     "水鱼": (isValidDFToken, "syToken"),
     "lx": (isValidLXID, "lxID"),
     "落雪": (isValidLXID, "lxID"),
-    "src": (isValidB50Source, "b50Source"),
-    "源": (isValidB50Source, "b50Source"),
-    "数据源": (isValidB50Source, "b50Source")
+    "src": (isValidSource, "dataSource"),
+    "源": (isValidSource, "dataSource"),
+    "数据源": (isValidSource, "dataSource")
 }
 
 def applyArgs(info, text: str) -> tuple[bool, str]:
@@ -50,7 +50,7 @@ def applyArgs(info, text: str) -> tuple[bool, str]:
         if not validator(val):
             return False, f"❌参数 {key} 格式错误！"
 
-        if field == "b50Source": # special check
+        if field == "dataSource": # special check
             val = "sy" if val in ("sy", "水鱼") else "lx"
 
         setattr(info, field, val)
@@ -60,7 +60,7 @@ DUMP_MAP = {
     "qqID": "QQ 号",
     "syToken": "水鱼 Token",
     "lxID": "落雪好友码",
-    "b50Source": "b50 数据源"
+    "dataSource": "b50 数据源"
 }
 
 def dumpInfo(info) -> str:
@@ -72,7 +72,7 @@ def dumpInfo(info) -> str:
             lines.append(f"❌{DUMP_MAP.get(key, key)}：未绑定")
         elif key == "syToken" or key == "lxID":
             lines.append(f"✅{DUMP_MAP.get(key, key)}：已绑定（不公开）")
-        elif key == "b50Source":
+        elif key == "dataSource":
             source_name = "水鱼" if val == "sy" else "落雪"
             lines.append(f"✅{DUMP_MAP.get(key, key)}：{source_name}")
         else:

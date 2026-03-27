@@ -10,7 +10,7 @@ from unicodedata import normalize as ucn
 
 from ..library.game_manager import GameManager
 from ..library.command_registry import registerChecker, isAnyCommand
-from ..library.songlist_manager import SONG_LIST
+from ..library.song_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 
 DEFAULT_SONG_NUM = 8

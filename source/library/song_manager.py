@@ -1,4 +1,4 @@
-from .songlist import SongList
+from .song import SongList
 from .info_handler import QueryEngine
 
 class SongListManager:
