@@ -30,6 +30,8 @@ class Chart:
             return 0
         for i in range(len(RATING_LIST)):
             if acc >= RATING_LIST[i][0]:
+                if i == 0: # 100.5 SSS+
+                    return int(RATING_LIST[i][2] * self.diff * 100.5)
                 return int(RATING_LIST[i][2] * self.diff * acc)
         return 0
 
