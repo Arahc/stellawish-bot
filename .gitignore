@@ -2,4 +2,4 @@
 .env.*
 __pycache__/
 venv/
-data/*.json
+data/user_info.json
