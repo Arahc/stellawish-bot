@@ -32,6 +32,7 @@ ARG_MAP = {
     "水鱼": (isValidDFToken, "syToken"),
     "lx": (isValidLXID, "lxID"),
     "落雪": (isValidLXID, "lxID"),
+    "source": (isValidSource, "dataSource"),
     "src": (isValidSource, "dataSource"),
     "源": (isValidSource, "dataSource"),
     "数据源": (isValidSource, "dataSource")
@@ -40,7 +41,7 @@ ARG_MAP = {
 def applyArgs(info, text: str) -> tuple[bool, str]:
     tokens = text.split()
     if len(tokens) % 2 != 0:
-        return False, "❌参数格式错误！请提供正确的参数，格式如：\n/bind qq <QQ号> sy <水鱼Token> lx <落雪ID> b50source <b50数据来源（sy或lx）>"
+        return False, "❌参数格式错误！请提供正确的参数，格式如：\n/bind qq <QQ号> sy <水鱼Token> lx <落雪ID> src <b50数据来源（sy或lx）>"
     for i in range(0, len(tokens), 2):
         key = tokens[i].lower()
         val = tokens[i + 1]
