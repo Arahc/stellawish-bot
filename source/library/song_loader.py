@@ -102,17 +102,17 @@ def updatePicDate(packID: int) -> bool:
         logger.warning(f"Pack ID {packID} does not match any song in the song list, skipping pic date update.")
         return False
     if songlist[sid].sdPack and songlist[sid].sdPack.id == packID:
-        if songlist[sid].sdPack.info_pic_date == date:
+        if songlist[sid].sdPack.info_pic_date != "" and songlist[sid].sdPack.info_pic_date == date:
             return False
         songlist[sid].sdPack.info_pic_date = date
     elif songlist[sid].dxPack and songlist[sid].dxPack.id == packID:
-        if songlist[sid].dxPack.info_pic_date == date:
+        if songlist[sid].dxPack.info_pic_date != "" and songlist[sid].dxPack.info_pic_date == date:
             return False
         songlist[sid].dxPack.info_pic_date = date
     else:
         for pack in songlist[sid].utPack:
             if pack.id == packID:
-                if pack.info_pic_date == date:
+                if pack.info_pic_date != "" and pack.info_pic_date == date:
                     return False
                 pack.info_pic_date = date
                 break

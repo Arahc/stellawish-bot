@@ -50,8 +50,8 @@ class ChartPack:
         self.id = id
         diff0 = pack[0]
         self.version = _getVersion(diff0['version'])
-        self.info_dat_date = "1111-11-11"
-        self.info_pic_date = "0000-00-00"
+        self.info_dat_date = ""
+        self.info_pic_date = ""
         if self.id >= 100000:
             self.tag = diff0['kanji']
             self.type = "UT"
