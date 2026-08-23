@@ -97,7 +97,7 @@ async def _(event: Event):
 
     if not flag:
         await b50.finish(message)
-    pic = generateB50(player, b35, b15)
+    pic = await generateB50(player, b35, b15)
     await b50.send("⏳查询成功，正在发送图片……若长时间未回复，为 QQ 获取图片超时，请稍后再试。")
     url = uploadImg(pic, f"generate/b50/{shorterID(open_id)}.png", cache=False)
     await b50.finish(MessageSegment.image(url))

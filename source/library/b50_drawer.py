@@ -6,6 +6,8 @@ from .sketchbox import FontManager as Font
 from .sketchbox import GridManager as Grid
 from .static import DIFF_COL_LIST, DIFF_FONT_COL_LIST, PIC_FOOTER_COL, STAR_DXRATE_LIST
 
+from .cover_manager import getSmallCover
+
 from .score import ScoreList, Score
 from .player import Player
 
@@ -51,7 +53,11 @@ CONFIG = {
             "left": 16
         }
     },
-    "logo_size": 200
+    "logo_size": {
+        "W": 300,
+        "H": 120,
+        "gap_H": 30
+    }
 }
 
 RATING_FILE_DICT = {
@@ -133,13 +139,13 @@ class ScoreCard:
         self.cols = DIFF_COL_LIST[self.grade.level_id]
         self.col_font = DIFF_FONT_COL_LIST[self.grade.level_id]
     
-    def render(self) -> Image.Image:
+    async def render(self) -> Image.Image:
         img = Image.new("RGBA", (self.W, self.H))
 
         base = self._draw_base()
         img.alpha_composite(base, (self.tag_offset, self.badge_cost))
 
-        cover = self._draw_cover()
+        cover = await self._draw_cover()
         img.alpha_composite(cover, (self.base_W + self.tag_offset - self.PADDING * 2 - self.cover_size, self.badge_cost + self.PADDING))
 
         title_bar = self._draw_title_bar()
@@ -160,10 +166,8 @@ class ScoreCard:
         base = Image.new("RGBA", (self.base_W, self.base_H), self.cols[0] + (255,))
         return base
 
-    def _draw_cover(self) -> Image.Image:
-        cover_path = COVER_DIR / f"{self.grade.id % 10000:04d}.png"
-        cover = Image.open(cover_path).convert("RGBA")
-        cover = cover.resize((self.cover_size, self.cover_size), Image.LANCZOS)
+    async def _draw_cover(self) -> Image.Image:
+        cover = await getSmallCover(self.grade.id, self.cover_size)
         return shadowed(cover, offset=(0, 0), blur=2, scale=1.02, color=(0, 0, 0, 50))
 
     def _draw_title_bar(self) -> Image.Image:
@@ -540,7 +544,9 @@ class Canvas:
     sd_dx_gap: int = CONFIG['canvas']['15_35_gap']
     card_gap: int = CONFIG['canvas']['card_gap']
     margin: dict[str, int] = CONFIG['canvas']['margin']
-    logo_size: int = CONFIG['logo_size']
+    logo_size_W: int = CONFIG['logo_size']["W"]
+    logo_size_H: int = CONFIG['logo_size']["H"]
+    logo_gap_H: int = CONFIG['logo_size']["gap_H"]
 
     def __init__(self):
         self.img = Image.new("RGBA", (self.W, self.H))
@@ -551,12 +557,12 @@ class Canvas:
 
         self.col_font = PIC_FOOTER_COL
     
-    def render(self, user: UserInfo, b35: list[GradeInfo], b15: list[GradeInfo]) -> Image.Image:
+    async def render(self, user: UserInfo, b35: list[GradeInfo], b15: list[GradeInfo]) -> Image.Image:
         self._draw_bg()
         self._draw_logo()
         self._draw_user_card(user)
-        self._draw_b35(b35)
-        self._draw_b15(b15)
+        await self._draw_b35(b35)
+        await self._draw_b15(b15)
         self._draw_footer()
         return self.img
 
@@ -581,15 +587,15 @@ class Canvas:
 
     def _draw_logo(self):
         logo = Image.open(PIC_DIR / "logo.png").convert("RGBA")
-        logo = logo.resize((self.logo_size, self.logo_size), Image.LANCZOS)
-        self.paste(logo, (self.margin['left'], self.margin['top']), logo)
+        logo = logo.resize((self.logo_size_W, self.logo_size_H), Image.LANCZOS)
+        self.paste(logo, (self.margin['left'], self.margin['top'] + self.logo_gap_H), logo)
 
     def _draw_user_card(self, user: UserInfo):
         card = UserCard(user)
         img = card.render()
-        self.paste(img, (self.margin['left'] + self.logo_size + 20, self.margin['top']), img)
+        self.paste(img, (self.margin['left'] + self.logo_size_W + 20, self.margin['top']), img)
     
-    def _draw_b35(self, grades: list[GradeInfo]):
+    async def _draw_b35(self, grades: list[GradeInfo]):
         grids = Grid(
             width=self.W - self.margin['left'] - self.margin['right'],
             height=self.card_gap * 6 + ScoreCard.H * 7,
@@ -603,10 +609,10 @@ class Canvas:
         )
         for grade, (x, y) in zip(grades, positions):
             card = ScoreCard(grade)
-            img = card.render()
+            img = await card.render()
             self.paste(img, (origin[0] + x, origin[1] + y), img)
 
-    def _draw_b15(self, grades: list[GradeInfo]):
+    async def _draw_b15(self, grades: list[GradeInfo]):
         grids = Grid(
             width=self.W - self.margin['left'] - self.margin['right'],
             height=self.card_gap * 2 + ScoreCard.H * 3,
@@ -620,7 +626,7 @@ class Canvas:
         )
         for grade, (x, y) in zip(grades, positions):
             card = ScoreCard(grade)
-            img = card.render()
+            img = await card.render()
             self.paste(img, (origin[0] + x, origin[1] + y), img)
     
     def _draw_footer(self):
@@ -636,11 +642,11 @@ class Canvas:
             fill=self.col_font
         )
 
-def generateB50(player: Player, b35: ScoreList, b15: ScoreList) -> Image.Image:
+async def generateB50(player: Player, b35: ScoreList, b15: ScoreList) -> Image.Image:
     user_info = UserInfo(player, b35.ra, b15.ra)
     b35_info = [GradeInfo(s, i + 1) for i, s in enumerate(b35)]
     b15_info = [GradeInfo(s, i + 1) for i, s in enumerate(b15)]
 
     canvas = Canvas()
-    img = canvas.render(user_info, b35_info, b15_info)
+    img = await canvas.render(user_info, b35_info, b15_info)
     return img

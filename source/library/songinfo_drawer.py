@@ -7,6 +7,8 @@ from .sketchbox import shadowed, truncate, wrap, alignedWrap
 from .utils import isFontBomb
 from .static import DIFF_NAME_LIST, DIFF_COL_LIST, DIFF_FONT_COL_LIST, PIC_FOOTER_COL, VERSION_DICT
 
+from .cover_manager import getCover
+
 PIC_DIR = Path(__file__).parent.parent / "data" / "pics"
 COVER_DIR = PIC_DIR / "covers"
 
@@ -57,11 +59,11 @@ class SongCard:
         self.col_block_fill = COL_BLOCK_FILL
         self.col_block_line = COL_BLOCK_LINE
 
-    def render(self) -> Image.Image:
+    async def render(self) -> Image.Image:
         img = Image.new("RGBA", (self.W, self.H))
 
         y = 0
-        cover = self._draw_cover()
+        cover = await self._draw_cover()
         img.alpha_composite(cover, (0, y))
 
         y += cover.height + 8
@@ -74,9 +76,8 @@ class SongCard:
 
         return img
 
-    def _draw_cover(self) -> Image.Image:
-        cover = Image.open(COVER_DIR / f"{self.song.id:04d}.png").convert("RGBA")
-        cover = cover.resize((self.cover_size, self.cover_size), Image.LANCZOS)
+    async def _draw_cover(self) -> Image.Image:
+        cover = await getCover(self.song.id)
         return shadowed(cover, offset=(0, 0), blur=2, scale=1.02, color=(0, 0, 0, 50))
 
     def _draw_bg(self) -> Image.Image:
@@ -447,9 +448,9 @@ class Canvas:
         self.col_block_fill = COL_BLOCK_FILL
         self.col_block_line = COL_BLOCK_LINE
 
-    def render(self, song, chartpack) -> Image.Image:
+    async def render(self, song, chartpack) -> Image.Image:
         self._draw_bg()
-        self._draw_songcard(song, chartpack)
+        await self._draw_songcard(song, chartpack)
         self._draw_diffcards(chartpack.charts)
         self._draw_footer()
         return self.img
@@ -473,8 +474,8 @@ class Canvas:
         ))
         self.paste(bg, (0, 0), bg)
     
-    def _draw_songcard(self, song, chartpack):
-        card = SongCard(song, chartpack).render()
+    async def _draw_songcard(self, song, chartpack):
+        card = await SongCard(song, chartpack).render()
         self.paste(card, (self.margin["left"], self.margin["top"]), card)
 
     def _draw_diffcards(self, charts):
@@ -511,7 +512,7 @@ class Canvas:
             fill=self.col_font
         )
 
-def generateSongInfo(song, chartpack) -> Image.Image:
+async def generateSongInfo(song, chartpack) -> Image.Image:
     canvas = Canvas()
-    img = canvas.render(song, chartpack)
+    img = await canvas.render(song, chartpack)
     return img

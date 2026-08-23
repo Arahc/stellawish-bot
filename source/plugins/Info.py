@@ -55,7 +55,7 @@ async def _(event: Event):
     pack = target.pack
     await info.send(f"⏳查询成功，正在生成图片……若长时间未回复，为图片上传超时，请稍后再试。")
     if updatePicDate(pack.id):
-        url = uploadImg(generateSongInfo(song, pack), f"generate/songinfo/{pack.id}.png", cache=False)
+        url = uploadImg(await generateSongInfo(song, pack), f"generate/songinfo/{pack.id}.png", cache=False)
     else:
         url = getURL(f"generate/songinfo/{pack.id}.png")
     await info.finish(MessageSegment.image(url))
