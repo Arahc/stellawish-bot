@@ -1,4 +1,5 @@
 import asyncio
+from functools import lru_cache
 
 from PIL import Image, ImageDraw
 from pathlib import Path
@@ -7,17 +8,14 @@ from .sketchbox import shadowed, truncate, filter
 from .sketchbox import FontManager as Font
 from .sketchbox import GridManager as Grid
 from .static import DIFF_COL_LIST, DIFF_FONT_COL_LIST, PIC_FOOTER_COL, STAR_DXRATE_LIST
+from .static import PIC_DIR, UI_DIR, PLATE_DIR, ICON_DIR
 
 from .cover_manager import getSmallCover
 
 from .score import ScoreList, Score
 from .player import Player
+from .userinfo import UserInfo
 
-PIC_DIR = Path(__file__).parent.parent / "data" / "pics"
-COVER_DIR = PIC_DIR / "covers"
-UI_DIR = PIC_DIR / "ui"
-PLATE_DIR = PIC_DIR / "plates"
-AVATAR_DIR = PIC_DIR / "avatars"
 
 CONFIG = {
     "canvas": {
@@ -86,6 +84,27 @@ STAR_FILE_LIST = [
     UI_DIR / "star3.png"  # 7 stars 100
 ]
 
+
+@lru_cache(maxsize=64)
+def _load_asset(path: str) -> Image.Image:
+    with Image.open(path) as image:
+        return image.convert("RGBA").copy()
+
+
+def _load_profile_asset(directory: Path, asset_id: int | str, fallback_id: str = "0") -> Image.Image:
+    """Load a profile asset and fall back safely for stale user settings."""
+    asset_name = str(asset_id)
+    if not asset_name.isascii() or not asset_name.isdigit():
+        asset_name = fallback_id
+    path = directory / f"{asset_name}.png"
+    fallback = directory / f"{fallback_id}.png"
+    try:
+        with Image.open(path) as image:
+            return image.convert("RGBA").copy()
+    except (FileNotFoundError, Image.UnidentifiedImageError, OSError):
+        with Image.open(fallback) as image:
+            return image.convert("RGBA").copy()
+
 class GradeInfo:
     def __init__(self, score: Score, count: int):
         self.title = score.song.title
@@ -101,12 +120,14 @@ class GradeInfo:
         self.max_dxScore = score.chart.getMaxDXscore()
         self.count = count
 
-class UserInfo:
-    def __init__(self, player: Player, ra35: int, ra15: int):
+class GameProfile:
+    def __init__(self, player: Player, ra35: int, ra15: int, iconID: str, plateID: str):
         self.name = player.name
         self.rating = ra35 + ra15
         self.ra35 = ra35
         self.ra15 = ra15
+        self.iconID = iconID
+        self.plateID = plateID
 
 class ScoreCard:
     W: int = CONFIG['score_card']['W']
@@ -141,13 +162,13 @@ class ScoreCard:
         self.cols = DIFF_COL_LIST[self.grade.level_id]
         self.col_font = DIFF_FONT_COL_LIST[self.grade.level_id]
     
-    async def render(self) -> Image.Image:
+    def render(self, cover_image: Image.Image) -> Image.Image:
         img = Image.new("RGBA", (self.W, self.H))
 
         base = self._draw_base()
         img.alpha_composite(base, (self.tag_offset, self.badge_cost))
 
-        cover = await self._draw_cover()
+        cover = self._draw_cover(cover_image)
         img.alpha_composite(cover, (self.base_W + self.tag_offset - self.PADDING * 2 - self.cover_size, self.badge_cost + self.PADDING))
 
         title_bar = self._draw_title_bar()
@@ -168,8 +189,7 @@ class ScoreCard:
         base = Image.new("RGBA", (self.base_W, self.base_H), self.cols[0] + (255,))
         return base
 
-    async def _draw_cover(self) -> Image.Image:
-        cover = await getSmallCover(self.grade.id, self.cover_size)
+    def _draw_cover(self, cover: Image.Image) -> Image.Image:
         return shadowed(cover, offset=(0, 0), blur=2, scale=1.02, color=(0, 0, 0, 50))
 
     def _draw_title_bar(self) -> Image.Image:
@@ -273,21 +293,21 @@ class ScoreCard:
         grade_pic_size = 32
         pic_padding = 2
 
-        blank_pic = Image.open(UI_DIR / "blank.png").convert("RGBA")
+        blank_pic = _load_asset(str(UI_DIR / "blank.png")).copy()
         blank_pic = blank_pic.resize((grade_pic_size, grade_pic_size), Image.LANCZOS)
         blank_pic = filter(blank_pic, self.cols[0] + (180,))
 
         if self.grade.fc == "":
             fc_pic = blank_pic.copy()
         else:
-            fc_pic = Image.open(UI_DIR / f"{self.grade.fc}.png").convert("RGBA")
+            fc_pic = _load_asset(str(UI_DIR / f"{self.grade.fc}.png")).copy()
             fc_pic = fc_pic.resize((grade_pic_size, grade_pic_size), Image.LANCZOS)
         content.alpha_composite(fc_pic, (0, y))
         
         if self.grade.fs == "":
             fs_pic = blank_pic.copy()
         else:
-            fs_pic = Image.open(UI_DIR / f"{self.grade.fs}.png").convert("RGBA")
+            fs_pic = _load_asset(str(UI_DIR / f"{self.grade.fs}.png")).copy()
             fs_pic = fs_pic.resize((grade_pic_size, grade_pic_size), Image.LANCZOS)
         content.alpha_composite(fs_pic, (grade_pic_size + pic_padding, y))
 
@@ -311,7 +331,7 @@ class ScoreCard:
         Cx = star_pic.width // 2
         Cy = star_pic.height // 2
         Coff = star_pic_size // 2 
-        single_star_ui = Image.open(STAR_FILE_LIST[star_count]).convert("RGBA")
+        single_star_ui = _load_asset(str(STAR_FILE_LIST[star_count])).copy()
         single_star_ui = single_star_ui.resize((star_pic_size, star_pic_size), Image.LANCZOS)
 
         if star_count == 0:
@@ -394,14 +414,17 @@ class UserCard:
     H: int = CONFIG['user_card']['H']
     margin: dict[str, int] = CONFIG['user_card']['plate_margin']
 
-    def __init__(self, user: UserInfo):
-        self.user = user
+    def __init__(self, profile: GameProfile):
+        self.profile = profile
 
         self.name_font = Font.get("SourceHanSans-Bold.otf", 32)
         self.ra_font = Font.get("MapleMono-CN-Medium.ttf", 22)
 
         self.col_font = (31, 30, 51, 255)
         self.font_ra_color = (255, 215, 0, 255) # gold
+
+        self.iconID = profile.iconID
+        self.plateID = profile.plateID
 
     def render(self) -> Image.Image:
         img = Image.new("RGBA", (self.W + 10, self.H + 10))
@@ -434,14 +457,14 @@ class UserCard:
     def _draw_logo(self) -> Image.Image:
         pic_size = 200
 
-        logo = Image.open(PIC_DIR / "logo.png").convert("RGBA")
+        logo = _load_asset(str(PIC_DIR / "logo.png")).copy()
         logo = logo.resize((pic_size, pic_size), Image.LANCZOS)
         return logo
         # return shadowed(logo, offset=(2, 2), blur=2, scale=1.0, color=(0, 0, 0, 80))
     
     def _draw_plate(self) -> Image.Image:
         pic_h = self.H - 30
-        bg = Image.open(PLATE_DIR / "00613X.png").convert("RGBA")
+        bg = _load_profile_asset(PLATE_DIR, self.plateID)
         rat = bg.width / bg.height
         pic_w = int(pic_h * rat)
         plate = bg.resize((pic_w, pic_h), Image.LANCZOS)
@@ -451,20 +474,20 @@ class UserCard:
     def _draw_avatar(self) -> Image.Image:
         pic_size = self.H - 50
 
-        avatar = Image.open(AVATAR_DIR / "309503.png").convert("RGBA")
+        avatar = _load_profile_asset(ICON_DIR, self.iconID)
         avatar = avatar.resize((pic_size, pic_size), Image.LANCZOS)
         return avatar
 
     def _draw_ra(self) -> Image.Image:
         ra_h = 50
 
-        rating = self.user.rating
+        rating = self.profile.rating
         ra_file = RATING_FILE_DICT[0]
         for r in sorted(RATING_FILE_DICT.keys(), reverse=True):
             if rating >= r:
                 ra_file = RATING_FILE_DICT[r]
                 break
-        ra_img = Image.open(ra_file).convert("RGBA")
+        ra_img = _load_asset(str(ra_file)).copy()
         rat = ra_img.width / ra_img.height
         ra_w = int(ra_h * rat)
         ra_img = ra_img.resize((ra_w, ra_h), Image.LANCZOS)
@@ -483,7 +506,7 @@ class UserCard:
             x = int(i * text_padding)
             if c == "":
                 continue
-            num_img = Image.open(UI_DIR / f"{c}.png").convert("RGBA")
+            num_img = _load_asset(str(UI_DIR / f"{c}.png")).copy()
             ratio = num_img.width / num_img.height
             num_img = num_img.resize((int(text_size * ratio), text_size), Image.LANCZOS)
             text_img.alpha_composite(num_img, (x, 0))
@@ -507,9 +530,10 @@ class UserCard:
             fill=(255, 255, 255, 180)
         )
 
+        name = truncate(self.profile.name, box_w - text_x_pad * 2, self.name_font)
         ImageDraw.Draw(box).text(
             (text_x_pad, text_y_pad),
-            self.user.name,
+            name,
             font=self.name_font,
             fill=self.col_font
         )
@@ -530,7 +554,7 @@ class UserCard:
             fill=(170, 204, 255, 60)
         )
 
-        text = f"b35 {self.user.ra35} + b15 {self.user.ra15} = {self.user.rating}"
+        text = f"b35 {self.profile.ra35} + b15 {self.profile.ra15} = {self.profile.rating}"
         ImageDraw.Draw(box).text(
             (text_x_pad, text_y_pad),
             text,
@@ -559,17 +583,23 @@ class Canvas:
 
         self.col_font = PIC_FOOTER_COL
     
-    async def render(self, user: UserInfo, b35: list[GradeInfo], b15: list[GradeInfo]) -> Image.Image:
+    def render(
+        self,
+        profile: GameProfile,
+        b35: list[GradeInfo],
+        b15: list[GradeInfo],
+        covers: dict[int, Image.Image],
+    ) -> Image.Image:
         self._draw_bg()
         self._draw_logo()
-        self._draw_user_card(user)
-        await self._draw_b35(b35)
-        await self._draw_b15(b15)
+        self._draw_user_card(profile)
+        self._draw_b35(b35, covers)
+        self._draw_b15(b15, covers)
         self._draw_footer()
         return self.img
 
     def _draw_bg(self):
-        bg = Image.open(PIC_DIR / "bg.png").convert("RGBA")
+        bg = _load_asset(str(PIC_DIR / "bg.png")).copy()
         bg_ratio = bg.width / bg.height
         canvas_ratio = self.W / self.H
         if bg_ratio > canvas_ratio:
@@ -588,16 +618,16 @@ class Canvas:
         self.paste(bg, (0, 0), bg)
 
     def _draw_logo(self):
-        logo = Image.open(PIC_DIR / "logo.png").convert("RGBA")
+        logo = _load_asset(str(PIC_DIR / "logo.png")).copy()
         logo = logo.resize((self.logo_size_W, self.logo_size_H), Image.LANCZOS)
         self.paste(logo, (self.margin['left'], self.margin['top'] + self.logo_gap_H), logo)
 
-    def _draw_user_card(self, user: UserInfo):
-        card = UserCard(user)
+    def _draw_user_card(self, profile: GameProfile):
+        card = UserCard(profile)
         img = card.render()
         self.paste(img, (self.margin['left'] + self.logo_size_W + 20, self.margin['top']), img)
     
-    async def _draw_b35(self, grades: list[GradeInfo]):
+    def _draw_b35(self, grades: list[GradeInfo], covers: dict[int, Image.Image]):
         grids = Grid(
             width=self.W - self.margin['left'] - self.margin['right'],
             height=self.card_gap * 6 + ScoreCard.H * 7,
@@ -609,11 +639,11 @@ class Canvas:
             self.margin['left'],
             self.margin['top'] + self.user_score_gap + UserCard.H
         )
-        cards = await asyncio.gather(*(ScoreCard(grade).render() for grade in grades))
-        for img, (x, y) in zip(cards, positions):
+        for grade, (x, y) in zip(grades, positions):
+            img = ScoreCard(grade).render(covers[grade.id])
             self.paste(img, (origin[0] + x, origin[1] + y), img)
 
-    async def _draw_b15(self, grades: list[GradeInfo]):
+    def _draw_b15(self, grades: list[GradeInfo], covers: dict[int, Image.Image]):
         grids = Grid(
             width=self.W - self.margin['left'] - self.margin['right'],
             height=self.card_gap * 2 + ScoreCard.H * 3,
@@ -625,8 +655,8 @@ class Canvas:
             self.margin['left'],
             self.margin['top'] + self.user_score_gap + UserCard.H + self.card_gap * 6 + ScoreCard.H * 7 + self.sd_dx_gap
         )
-        cards = await asyncio.gather(*(ScoreCard(grade).render() for grade in grades))
-        for img, (x, y) in zip(cards, positions):
+        for grade, (x, y) in zip(grades, positions):
+            img = ScoreCard(grade).render(covers[grade.id])
             self.paste(img, (origin[0] + x, origin[1] + y), img)
     
     def _draw_footer(self):
@@ -642,11 +672,16 @@ class Canvas:
             fill=self.col_font
         )
 
-async def generateB50(player: Player, b35: ScoreList, b15: ScoreList) -> Image.Image:
-    user_info = UserInfo(player, b35.ra, b15.ra)
+async def generateB50(player: Player, b35: ScoreList, b15: ScoreList, user: UserInfo) -> Image.Image:
+    profile = GameProfile(player, b35.ra, b15.ra, user.iconID, user.plateID)
     b35_info = [GradeInfo(s, i + 1) for i, s in enumerate(b35)]
     b15_info = [GradeInfo(s, i + 1) for i, s in enumerate(b15)]
 
-    canvas = Canvas()
-    img = await canvas.render(user_info, b35_info, b15_info)
-    return img
+    cover_ids = list(dict.fromkeys(grade.id for grade in b35_info + b15_info))
+    cover_images = await asyncio.gather(*(getSmallCover(song_id, ScoreCard.cover_size) for song_id in cover_ids))
+    covers = dict(zip(cover_ids, cover_images))
+
+    def draw() -> Image.Image:
+        return Canvas().render(profile, b35_info, b15_info, covers)
+
+    return await asyncio.to_thread(draw)

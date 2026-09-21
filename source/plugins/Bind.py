@@ -3,7 +3,7 @@ from nonebot.rule import to_me
 from nonebot.adapters.qq import Event
 
 from ..library.userinfo_manager import USER_INFO
-from ..library.userinfo_loader import setUserInfo
+from ..library.userinfo_loader import bindScoreSource
 from ..library.command_registry import registerChecker
 
 import re
@@ -69,7 +69,9 @@ def dumpInfo(info) -> str:
     for key, val in info.__dict__.items():
         if key == "openID":
             continue
-        elif val is None:
+        if DUMP_MAP.get(key) is None:
+            continue
+        if val is None:
             lines.append(f"❌{DUMP_MAP.get(key, key)}：未绑定")
         elif key == "syToken" or key == "lxID":
             lines.append(f"✅{DUMP_MAP.get(key, key)}：已绑定（不公开）")
@@ -96,7 +98,6 @@ async def _(event: Event):
     status, message = applyArgs(info, text)
     if not status:
         await bind.finish(message)
-    setUserInfo(open_id, info)
-    USER_INFO.set(info)
+    bindScoreSource(open_id, info)
     message += dumpInfo(info)
     await bind.finish(message)

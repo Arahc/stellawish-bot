@@ -1,7 +1,7 @@
 import asyncio
 
 import httpx
-from nonebot import on_message
+from nonebot import get_driver, on_message
 from nonebot.rule import to_me
 from nonebot.adapters.qq import Event, MessageSegment
 
@@ -31,16 +31,36 @@ b50 = on_message(rule=to_me() & isValidCommand, priority=1)
 
 API_TIME_OUT = 10
 HTTP_TIMEOUT = httpx.Timeout(connect=2.5, read=7.0, write=7.0, pool=2.5)
+HTTP_LIMITS = httpx.Limits(max_connections=20, max_keepalive_connections=10)
+_api_client: httpx.AsyncClient | None = None
+_api_client_lock = asyncio.Lock()
+
+
+async def _get_api_client() -> httpx.AsyncClient:
+    global _api_client
+    if _api_client is None or _api_client.is_closed:
+        async with _api_client_lock:
+            if _api_client is None or _api_client.is_closed:
+                _api_client = httpx.AsyncClient(timeout=HTTP_TIMEOUT, limits=HTTP_LIMITS)
+    return _api_client
+
+
+@get_driver().on_shutdown
+async def _close_api_client() -> None:
+    global _api_client
+    if _api_client is not None and not _api_client.is_closed:
+        await _api_client.aclose()
+    _api_client = None
 
 
 def _request_error(source: str, exc: Exception) -> str:
     return f"Query failed: {source} is unavailable ({type(exc).__name__}). Please try again later."
 
 
-async def fectchB50_SY(user) -> tuple[bool, str, Player | None, ScoreList | None, ScoreList | None]:
+async def fetchB50_SY(user) -> tuple[bool, str, Player | None, ScoreList | None, ScoreList | None]:
     try:
-        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
-            resp = await client.post(B50_API_URL, json={"qq": user.qqID, "b50": "1"})
+        client = await _get_api_client()
+        resp = await client.post(B50_API_URL, json={"qq": user.qqID, "b50": "1"})
         if resp.status_code == 400:
             return False, "❌查询失败：绑定的 QQ 账号在水鱼中不存在。", None, None, None
         if resp.status_code == 403:
@@ -59,21 +79,21 @@ async def fectchB50_SY(user) -> tuple[bool, str, Player | None, ScoreList | None
         return False, _request_error("水鱼 API", exc), None, None, None
 
 
-async def fectchB50_LX(user) -> tuple[bool, str, Player | None, ScoreList | None, ScoreList | None]:
+async def fetchB50_LX(user) -> tuple[bool, str, Player | None, ScoreList | None, ScoreList | None]:
     try:
-        async with httpx.AsyncClient(timeout=HTTP_TIMEOUT) as client:
-            headers = {"Authorization": LXNS_KEY}
-            resp = await client.get(LXNS_B50_API(user.lxID), headers=headers)
-            if resp.status_code != 200:
-                return False, f"❌查询失败：落雪 API 返回 HTTP {resp.status_code}。", None, None, None
-            data = resp.json()["data"]
-            b35 = ScoreList.loadFromLX(data["standard"])
-            b15 = ScoreList.loadFromLX(data["dx"])
+        client = await _get_api_client()
+        headers = {"Authorization": LXNS_KEY}
+        resp = await client.get(LXNS_B50_API(user.lxID), headers=headers)
+        if resp.status_code != 200:
+            return False, f"❌查询失败：落雪 API 返回 HTTP {resp.status_code}。", None, None, None
+        data = resp.json()["data"]
+        b35 = ScoreList.loadFromLX(data["standard"])
+        b15 = ScoreList.loadFromLX(data["dx"])
 
-            resp = await client.get(LXNS_PROFILE_API(user.lxID), headers=headers)
-            if resp.status_code != 200:
-                return False, f"❌查询失败：落雪用户信息返回 HTTP {resp.status_code}。", None, None, None
-            player = Player(resp.json()["data"]["name"])
+        resp = await client.get(LXNS_PROFILE_API(user.lxID), headers=headers)
+        if resp.status_code != 200:
+            return False, f"❌查询失败：落雪用户信息返回 HTTP {resp.status_code}。", None, None, None
+        player = Player(resp.json()["data"]["name"])
         return True, "", player, b35, b15
     except (httpx.HTTPError, asyncio.TimeoutError, ValueError, KeyError, TypeError) as exc:
         return False, _request_error("落雪 API", exc), None, None, None
@@ -89,7 +109,7 @@ async def _(event: Event):
     # Send progress before any remote request or image rendering starts.
     await b50.send("⏳查询已开始，正在获取成绩并生成图片，请稍候……")
     try:
-        fetch = fectchB50_SY(user) if user.dataSource == "sy" else fectchB50_LX(user)
+        fetch = fetchB50_SY(user) if user.dataSource == "sy" else fetchB50_LX(user)
         flag, message, player, b35, b15 = await asyncio.wait_for(fetch, timeout=API_TIME_OUT + 2)
     except asyncio.TimeoutError:
         await b50.finish("❌查询超时：数据服务响应过慢，请稍后重试。")
@@ -97,7 +117,7 @@ async def _(event: Event):
         await b50.finish(message)
 
     try:
-        pic = await asyncio.wait_for(generateB50(player, b35, b15), timeout=20)
+        pic = await asyncio.wait_for(generateB50(player, b35, b15, user), timeout=20)
         url = await uploadImgAsync(pic, f"generate/b50/{shorterID(open_id)}.png", timeout=15)
     except asyncio.TimeoutError:
         await b50.finish("❌图片生成或上传超时，请稍后重试。")

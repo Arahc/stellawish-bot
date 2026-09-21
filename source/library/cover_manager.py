@@ -8,11 +8,11 @@ from pathlib import Path
 import httpx
 from PIL import Image
 
+from .static import COVER_DIR, SMALL_DIR, PIC_DIR
+
 COVER_URL = "https://assets2.lxns.net/maimai/jacket/{}.png"
-PIC_DIR = Path(__file__).parent.parent / "data" / "pics"
-COVER_DIR = PIC_DIR / "covers"
-SMALL_DIR = PIC_DIR / "covers_small"
-FALLBACK_PATH = PIC_DIR / "covers" / "0000.png"
+
+FALLBACK_PATH = PIC_DIR / "covers" / "0.png"
 
 COVER_DIR.mkdir(parents=True, exist_ok=True)
 SMALL_DIR.mkdir(parents=True, exist_ok=True)
@@ -71,6 +71,10 @@ async def _download_cover(song_id: int, file_path: Path) -> bool:
     try:
         client = await _get_client()
         async with _download_slots:
+            # Requests may have waited behind another failed batch. Re-check
+            # the circuit here so queued covers do not start new requests.
+            if time.monotonic() < _remote_disabled_until:
+                return False
             response = await client.get(COVER_URL.format(song_id % 10000))
         if response.status_code in (403, 429):
             # Avoid sending dozens of requests after an anti-bot response.
@@ -93,29 +97,37 @@ async def _download_cover(song_id: int, file_path: Path) -> bool:
 
 async def getCover(song_id: int) -> Image.Image:
     normalized_id = song_id % 10000
-    file_path = COVER_DIR / f"{normalized_id:04d}.png"
+    file_path = COVER_DIR / f"{normalized_id}.png"
     try:
-        return _load_image(file_path)
+        return await asyncio.to_thread(_load_image, file_path)
     except (Image.UnidentifiedImageError, OSError):
         # Concurrent requests for the same missing cover share one download.
         lock = _song_locks.setdefault(normalized_id, asyncio.Lock())
         async with lock:
             try:
-                return _load_image(file_path)
+                return await asyncio.to_thread(_load_image, file_path)
             except (Image.UnidentifiedImageError, OSError):
-                if not await _download_cover(normalized_id, file_path):
-                    return _fallback()
                 try:
-                    return _load_image(file_path)
+                    await asyncio.to_thread(file_path.unlink, missing_ok=True)
+                except OSError:
+                    pass
+                if not await _download_cover(normalized_id, file_path):
+                    return await asyncio.to_thread(_fallback)
+                try:
+                    return await asyncio.to_thread(_load_image, file_path)
                 except (Image.UnidentifiedImageError, OSError):
-                    return _fallback()
+                    try:
+                        await asyncio.to_thread(file_path.unlink, missing_ok=True)
+                    except OSError:
+                        pass
+                    return await asyncio.to_thread(_fallback)
 
 
 async def getSmallCover(song_id: int, size: int = 100) -> Image.Image:
     normalized_id = song_id % 10000
-    file_path = SMALL_DIR / f"{normalized_id:04d}.png"
+    file_path = SMALL_DIR / f"{normalized_id}.png"
     try:
-        image = _load_image(file_path)
+        image = await asyncio.to_thread(_load_image, file_path)
         if image.size != (size, size):
             image = image.resize((size, size), Image.LANCZOS)
         return image
@@ -123,8 +135,12 @@ async def getSmallCover(song_id: int, size: int = 100) -> Image.Image:
         image = await getCover(normalized_id)
         if image.size != (size, size):
             image = image.resize((size, size), Image.LANCZOS)
-        try:
-            await asyncio.to_thread(image.save, file_path, "PNG")
-        except OSError:
-            pass
+        # Do not persist a fallback image as a real cover.  Otherwise a
+        # temporary outage would permanently poison the small-cover cache.
+        source_path = COVER_DIR / f"{normalized_id}.png"
+        if source_path.exists():
+            try:
+                await asyncio.to_thread(image.save, file_path, "PNG")
+            except OSError:
+                pass
         return image

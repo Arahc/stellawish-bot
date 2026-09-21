@@ -4,5 +4,4 @@ __pycache__/
 venv/
 source/data/user_info.json
 source/data/song_info.json
-source/data/pics/covers/
-source/data/pics/covers_small/
+source/data/pics/

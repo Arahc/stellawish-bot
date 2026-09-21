@@ -1,0 +1,9 @@
+boto3>=1.34.0
+nonebot2[fastapi,httpx,websockets]>=2.5.0
+nonebot-adapter-qq>=1.6.6
+nonebot-plugin-status>=0.9.0
+nonebot-plugin-docs>=2.4.4
+nonebot_plugin_session>=0.3.2
+nonebot-plugin-waiter>=0.8.1
+pillow>=10.0.0
+python-dotenv>=1.0.0

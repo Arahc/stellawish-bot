@@ -46,11 +46,15 @@ def truncate(text: str, max_width: int, font) -> str:
     if draw.textbbox((0, 0), text, font=font)[2] <= max_width:
         return text
 
-    for i in range(len(text), 0, -1):
-        t = text[:i] + "…"
-        if draw.textbbox((0, 0), t, font=font)[2] <= max_width:
-            return t
-    return text
+    low, high = 0, len(text)
+    while low < high:
+        mid = (low + high + 1) // 2
+        candidate = text[:mid] + "…"
+        if draw.textbbox((0, 0), candidate, font=font)[2] <= max_width:
+            low = mid
+        else:
+            high = mid - 1
+    return text[:low] + "…"
 
 def wrap(text: str, max_width: int, font) -> list[str]:
     draw = ImageDraw.Draw(Image.new("RGBA", (1, 1)))

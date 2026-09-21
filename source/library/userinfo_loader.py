@@ -19,12 +19,12 @@ def saveUserInfo(info: dict):
 
 # ----------- Maintenance -----------
 
-def setUserInfo(openID: str, data: dict | UserInfo):
+def bindScoreSource(openID: str, data: dict | UserInfo):
     if isinstance(data, UserInfo):
         user_info = data
     else:
         user_info = USER_INFO.get(openID)
-        user_info.set(
+        user_info.bindSource(
             qqID=data.get('qqID'),
             syToken=data.get('syToken'),
             lxID=data.get('lxID'),

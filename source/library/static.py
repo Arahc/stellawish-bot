@@ -19,6 +19,15 @@ DATA_PATH = Path(__file__).parent.parent / "data"
 SONG_INFO_PATH = DATA_PATH / "song_info.json"
 USER_INFO_PATH = DATA_PATH / "user_info.json"
 
+PIC_DIR = DATA_PATH / "pics"
+UI_DIR = PIC_DIR / "ui"
+COVER_DIR = PIC_DIR / "covers"
+ICON_DIR = PIC_DIR / "icons"
+PLATE_DIR = PIC_DIR / "plates"
+SMALL_DIR = PIC_DIR / "covers_small"
+
+# ===== all the directories are ensured exist manually =====
+
 VERSION_DICT = {
     "maimai": (10000, "真"),
     "maimai PLUS": (11000, "真"),
