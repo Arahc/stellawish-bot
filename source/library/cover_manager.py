@@ -8,11 +8,11 @@ from pathlib import Path
 import httpx
 from PIL import Image
 
-COVER_URL = "https://assets2.lxns.net/maimai/jacket/{id:04d}.png"
+COVER_URL = "https://assets2.lxns.net/maimai/jacket/{}.png"
 PIC_DIR = Path(__file__).parent.parent / "data" / "pics"
 COVER_DIR = PIC_DIR / "covers"
 SMALL_DIR = PIC_DIR / "covers_small"
-FALLBACK_PATH = PIC_DIR / "ui" / "blank.png"
+FALLBACK_PATH = PIC_DIR / "covers" / "0000.png"
 
 COVER_DIR.mkdir(parents=True, exist_ok=True)
 SMALL_DIR.mkdir(parents=True, exist_ok=True)
@@ -71,7 +71,7 @@ async def _download_cover(song_id: int, file_path: Path) -> bool:
     try:
         client = await _get_client()
         async with _download_slots:
-            response = await client.get(COVER_URL.format(id=song_id % 10000))
+            response = await client.get(COVER_URL.format(song_id % 10000))
         if response.status_code in (403, 429):
             # Avoid sending dozens of requests after an anti-bot response.
             _remote_disabled_until = time.monotonic() + 60
