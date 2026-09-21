@@ -1,3 +1,5 @@
+import asyncio
+
 from nonebot import on_message
 from nonebot.rule import to_me
 from nonebot.adapters.qq import Event, MessageSegment
@@ -6,8 +8,8 @@ from ..library.command_registry import registerChecker
 from ..library.song_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 from ..library.songinfo_drawer import generateSongInfo
-from ..library.upload_img import uploadImg, getURL
-from ..library.song_loader import updatePicDate
+from ..library.upload_img import uploadImgAsync, getURL
+from ..library.song_loader import updatePicDate, getToday
 
 CANBE_PREFIX = ("/info", "info", "/查歌", "查歌")
 CANBE_SUFFIX = ("是什么歌",)
@@ -54,8 +56,17 @@ async def _(event: Event):
     song = target.song
     pack = target.pack
     await info.send(f"⏳查询成功，正在生成图片……若长时间未回复，为图片上传超时，请稍后再试。")
-    if updatePicDate(pack.id):
-        url = uploadImg(await generateSongInfo(song, pack), f"generate/songinfo/{pack.id}.png", cache=False)
-    else:
-        url = getURL(f"generate/songinfo/{pack.id}.png")
+    try:
+        # Mark the cover date only after a new image has been uploaded.  A
+        # failed render must not make later requests use a missing URL.
+        if pack.info_pic_date != getToday():
+            image = await asyncio.wait_for(generateSongInfo(song, pack), timeout=15)
+            url = await uploadImgAsync(image, f"generate/songinfo/{pack.id}.png", timeout=15)
+            updatePicDate(pack.id)
+        else:
+            url = getURL(f"generate/songinfo/{pack.id}.png")
+    except asyncio.TimeoutError:
+        await info.finish("图片生成或上传超时，请稍后重试。")
+    except Exception:
+        await info.finish("图片生成或上传失败，请稍后重试。")
     await info.finish(MessageSegment.image(url))

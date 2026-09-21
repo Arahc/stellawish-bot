@@ -9,20 +9,26 @@ from .static import SONG_INFO_PATH
 from .song_manager import SONG_LIST
 from .song import SongList
 
+API_TIMEOUT = httpx.Timeout(connect=3.0, read=12.0, write=5.0, pool=3.0)
+
 # ----------- File -----------
 
 async def fetchChartsAPI():
     param = {"notes": "true"}
-    async with httpx.AsyncClient() as client:
+    async with httpx.AsyncClient(timeout=API_TIMEOUT, headers={"User-Agent": "StellawishBot/1.0"}) as client:
         response = await client.get(CHARTS_API_URL, params=param)
         response.raise_for_status()
         return response.status_code, response.json()
 
 async def fetchAliasesAPI():
-    async with httpx.AsyncClient() as client:
-        response = await client.get(ALIASES_API_URL)
-        response.raise_for_status()
-        return response.status_code, response.json()
+    try:
+        async with httpx.AsyncClient(timeout=API_TIMEOUT, headers={"User-Agent": "StellawishBot/1.0"}) as client:
+            response = await client.get(ALIASES_API_URL)
+            response.raise_for_status()
+            return response.status_code, response.json()
+    except (httpx.HTTPError, ValueError) as exc:
+        logger.warning(f"Aliases API unavailable, keeping local aliases: {exc}")
+        return None, None
 
 def loadSongInfo() -> dict:
     if not SONG_INFO_PATH.exists():

@@ -1,3 +1,5 @@
+import asyncio
+
 from PIL import Image, ImageDraw
 from pathlib import Path
 
@@ -607,9 +609,8 @@ class Canvas:
             self.margin['left'],
             self.margin['top'] + self.user_score_gap + UserCard.H
         )
-        for grade, (x, y) in zip(grades, positions):
-            card = ScoreCard(grade)
-            img = await card.render()
+        cards = await asyncio.gather(*(ScoreCard(grade).render() for grade in grades))
+        for img, (x, y) in zip(cards, positions):
             self.paste(img, (origin[0] + x, origin[1] + y), img)
 
     async def _draw_b15(self, grades: list[GradeInfo]):
@@ -624,9 +625,8 @@ class Canvas:
             self.margin['left'],
             self.margin['top'] + self.user_score_gap + UserCard.H + self.card_gap * 6 + ScoreCard.H * 7 + self.sd_dx_gap
         )
-        for grade, (x, y) in zip(grades, positions):
-            card = ScoreCard(grade)
-            img = await card.render()
+        cards = await asyncio.gather(*(ScoreCard(grade).render() for grade in grades))
+        for img, (x, y) in zip(cards, positions):
             self.paste(img, (origin[0] + x, origin[1] + y), img)
     
     def _draw_footer(self):
