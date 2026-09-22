@@ -137,5 +137,5 @@ async def singleScore(user, pack_id: int) -> ScoreList:
     if response.status_code == 401:
         _token_cache.pop(user.qqID, None)
     response.raise_for_status()
-    return ScoreList.loadFromSY(response.json()["data"]["records"])
+    return ScoreList.loadFromSY(response.json()["data"][f"{pack_id}"])
 
