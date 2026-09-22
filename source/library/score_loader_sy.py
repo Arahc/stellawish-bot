@@ -110,6 +110,32 @@ def _failure(exc: Exception) -> str:
         return "查询失败：水鱼 API 查询次数已达上限。"
     return f"查询失败：水鱼 API 暂不可用（{type(exc).__name__}）。"
 
+async def checkBindingAsync(qq_id: str) -> bool:
+    """Return whether Diving-Fish authorization is available for a QQ id."""
+    if not qq_id:
+        return False
+    token, expires_at = _token_cache.get(qq_id, (None, 0))
+    if token and time.time() < expires_at - 30:
+        return True
+    try:
+        await _access_token(qq_id)
+        return True
+    except NotBound:
+        return False
+    except QueryLimitExceeded:
+        return True
+    except Exception:
+        return False
+
+
+def checkBinding(qq_id: str) -> bool:
+    """Check only the in-memory cache from synchronous code.
+
+    Network authorization checks must use :func:`checkBindingAsync`; calling
+    ``asyncio.run`` from a NoneBot handler would conflict with its event loop.
+    """
+    token, expires_at = _token_cache.get(qq_id, (None, 0))
+    return bool(token and time.time() < expires_at - 30)
 
 async def b50Score(user) -> tuple[bool, str, Player | None, ScoreList | None, ScoreList | None]:
     try:
@@ -137,5 +163,21 @@ async def singleScore(user, pack_id: int) -> ScoreList:
     if response.status_code == 401:
         _token_cache.pop(user.qqID, None)
     response.raise_for_status()
-    return ScoreList.loadFromSY(response.json()["data"][f"{pack_id}"])
-
+    payload = response.json()
+    records = payload.get(str(pack_id)) if isinstance(payload, dict) else None
+    if records is None and isinstance(payload, dict):
+        records = payload.get(str(pack_id % 10000))
+    data = payload.get("data") if isinstance(payload, dict) else None
+    if records is None and isinstance(data, dict):
+        # Diving-Fish has returned both {"data": {"<id>": [...]}}
+        # and {"data": {"records": [...]}} over its API versions.
+        records = data.get(str(pack_id))
+        if records is None:
+            records = data.get(str(pack_id % 10000))
+        if records is None:
+            records = data.get("records")
+    if records is None and isinstance(data, list):
+        records = data
+    if records is None:
+        raise ValueError(f"Diving-Fish response has no records for pack {pack_id}")
+    return ScoreList.loadFromSY(records)

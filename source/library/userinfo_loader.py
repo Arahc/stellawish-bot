@@ -26,7 +26,6 @@ def bindScoreSource(openID: str, data: dict | UserInfo):
         user_info = USER_INFO.get(openID)
         user_info.bindSource(
             qqID=data.get('qqID'),
-            syToken=data.get('syToken'),
             lxID=data.get('lxID'),
             dataSource=data.get('dataSource')
         )

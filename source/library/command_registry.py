@@ -60,7 +60,12 @@ def registerCommandInfo(
 
 
 def renderHelp() -> str:
-    lines = ["星愿 Bot 指令帮助", ""]
+    lines = [
+        "# 星愿 Bot 帮助",
+        "",
+        "使用下面的指令格式与 Bot 交互。尖括号表示必填参数，方括号表示可选参数。",
+        "",
+    ]
     categories: dict[str, list[CommandInfo]] = {}
     for command in COMMANDS:
         categories.setdefault(command.category, []).append(command)
@@ -69,14 +74,16 @@ def renderHelp() -> str:
     ordered_categories.extend(category for category in categories if category not in CATEGORY_ORDER)
     for category in ordered_categories:
         commands = sorted(categories[category], key=lambda command: command.name)
-        lines.append(f"【{category}】")
-        for command in commands:
-            permission = f"（{command.permission}）" if command.permission else ""
-            lines.append(f"{command.usage}{permission}")
-            lines.append(f"  {command.description}")
-            if command.aliases:
-                lines.append(f"  别名：{'、'.join(command.aliases)}")
+        lines.append(f"## {category}")
         lines.append("")
+        for command in commands:
+            lines.append(f"### `{command.usage}`")
+            lines.append(command.description)
+            if command.permission:
+                lines.append(f"权限：`{command.permission}`")
+            if command.aliases:
+                lines.append(f"别名：{'、'.join(f'`{alias}`' for alias in command.aliases)}")
+            lines.append("")
     return "\n".join(lines).rstrip()
 
 def isAnyCommand(text: str) -> bool:

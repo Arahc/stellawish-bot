@@ -1,10 +1,11 @@
-from nonebot import on_startswith
+from nonebot import on_message
 from nonebot.rule import to_me
 from nonebot.adapters.qq import Event
 
 from ..library.userinfo_manager import USER_INFO
 from ..library.userinfo_loader import bindScoreSource
 from ..library.command_registry import registerCommand
+from ..library.score_loader_sy import checkBindingAsync
 
 import re
 
@@ -12,21 +13,22 @@ CANBE_PREFIX = ("/bind", "bind", "/绑定", "绑定", "/绑", "绑")
 
 @registerCommand(
     name="bind",
-    usage="/bind qq <QQ号> sy <水鱼Token> lx <落雪ID> src <sy|lx>",
+    usage="/bind qq <QQ号> lx <落雪ID> src <sy|lx>",
     description="绑定成绩数据源；参数可以按需组合。",
     aliases=("bind", "绑定"),
     category="账号与设置",
 )
 def isCommandText(text: str) -> bool:
     lower_text = text.lower()
-    return lower_text.startswith(CANBE_PREFIX)
+    return any(lower_text == prefix or lower_text.startswith(prefix + " ") for prefix in CANBE_PREFIX)
 
-bind = on_startswith(CANBE_PREFIX, rule=to_me(), ignorecase=True, priority=8)
+def isValidCommand(event: Event) -> bool:
+    return isCommandText(event.get_message().extract_plain_text().strip())
+
+bind = on_message(rule=to_me() & isValidCommand, priority=8)
 
 def isValidQQID(qqid: str) -> bool:
     return re.fullmatch(r"[1-9][0-9]{4,14}", qqid) is not None
-def isValidDFToken(token: str) -> bool:
-    return re.fullmatch(r"[a-zA-Z0-9]{20,}", token) is not None
 def isValidLXID(lxid: str) -> bool:
     return re.fullmatch(r"[0-9]{10,}", lxid) is not None
 def isValidSource(source: str) -> bool:
@@ -34,8 +36,6 @@ def isValidSource(source: str) -> bool:
 
 ARG_MAP = {
     "qq": (isValidQQID, "qqID"),
-    "sy": (isValidDFToken, "syToken"),
-    "水鱼": (isValidDFToken, "syToken"),
     "lx": (isValidLXID, "lxID"),
     "落雪": (isValidLXID, "lxID"),
     "source": (isValidSource, "dataSource"),
@@ -47,7 +47,7 @@ ARG_MAP = {
 def applyArgs(info, text: str) -> tuple[bool, str]:
     tokens = text.split()
     if len(tokens) % 2 != 0:
-        return False, "❌参数格式错误！请提供正确的参数，格式如：\n/bind qq <QQ号> sy <水鱼Token> lx <落雪ID> src <b50数据来源（sy或lx）>"
+        return False, "❌参数格式错误！请提供正确的参数，格式如：\n/bind qq <QQ号> lx <落雪ID> src <b50数据来源（sy或lx）>"
     for i in range(0, len(tokens), 2):
         key = tokens[i].lower()
         val = tokens[i + 1]
@@ -65,12 +65,11 @@ def applyArgs(info, text: str) -> tuple[bool, str]:
 
 DUMP_MAP = {
     "qqID": "QQ 号",
-    "syToken": "水鱼 Token",
     "lxID": "落雪好友码",
     "dataSource": "数据源"
 }
 
-def dumpInfo(info) -> str:
+async def dumpInfo(info) -> str:
     lines = []
     for key, val in info.__dict__.items():
         if key == "openID":
@@ -79,13 +78,15 @@ def dumpInfo(info) -> str:
             continue
         if val is None:
             lines.append(f"❌{DUMP_MAP.get(key, key)}：未绑定")
-        elif key == "syToken" or key == "lxID":
+        elif key == "lxID":
             lines.append(f"✅{DUMP_MAP.get(key, key)}：已绑定（不公开）")
         elif key == "dataSource":
             source_name = "水鱼" if val == "sy" else "落雪"
             lines.append(f"✅{DUMP_MAP.get(key, key)}：{source_name}")
         else:
             lines.append(f"✅{DUMP_MAP.get(key, key)}：{val}")
+    if info.dataSource == "sy" and info.qqID is not None and not await checkBindingAsync(info.qqID):
+        lines.append("⚠️水鱼账号未完成授权：请使用 /bindsy 进行绑定")
     return "\n".join(lines)
 
 @bind.handle()
@@ -99,11 +100,11 @@ async def _(event: Event):
     open_id = event.get_user_id()
     info = USER_INFO.get(open_id)
     if not text:
-        text = "你的绑定信息如下：\n" + dumpInfo(info)
+        text = "你的绑定信息如下：\n" + await dumpInfo(info)
         await bind.finish(text)
     status, message = applyArgs(info, text)
     if not status:
         await bind.finish(message)
     bindScoreSource(open_id, info)
-    message += dumpInfo(info)
+    message += await dumpInfo(info)
     await bind.finish(message)

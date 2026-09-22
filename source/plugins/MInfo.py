@@ -87,9 +87,6 @@ def _render_result(song, pack, scores: list, selected_chart=None) -> str:
 @minfo.handle()
 async def _(event: Event):
     user = USER_INFO.get(event.get_user_id())
-    if not user.canMInfo():
-        await minfo.finish("查询失败：请先使用 /bind 绑定成绩数据源并完成授权。")
-
     text = event.get_message().extract_plain_text().strip()
     lower_text = text.lower()
     for prefix in CANBE_PREFIX:
@@ -100,13 +97,13 @@ async def _(event: Event):
             text = text[len(prefix):].strip()
             break
     if not text:
-        await minfo.finish("请提供歌曲名称或 ID。")
+        await minfo.finish("❌请提供歌曲名称或 ID。")
 
     results = SONG_LIST.getQueryEngine().query(text.lower(), QUERY_POLICY)
     if not results:
-        await minfo.finish(f"查询失败：未找到「{text}」对应的曲目。")
+        await minfo.finish(f"❌查询失败：未找到「{text}」对应的曲目。")
     if len(results) > 1:
-        lines = ["找到多个符合条件的谱面，请使用更精确的名称或 ID："]
+        lines = ["⚠️找到多个符合条件的谱面，请使用更精确的名称或 ID："]
         for target in results:
             pack = target.pack
             suffix = f"，{_difficulty_name(target.chart.diffid)}" if target.chart else ""
@@ -115,16 +112,26 @@ async def _(event: Event):
 
     target = results[0]
     pack = target.pack
-    loader = score_loader_sy if user.dataSource == "sy" else score_loader_lx
+    if user.dataSource == "sy":
+        if not user.qqID:
+            await minfo.finish("❌查询失败：请先使用 /bind 绑定 QQ 号。")
+        loader = score_loader_sy
+    elif user.dataSource == "lx":
+        if not user.lxID:
+            await minfo.finish("❌查询失败：请先使用 /bind 绑定落雪好友码。")
+        loader = score_loader_lx
+    else:
+        await minfo.finish("❌查询失败：成绩数据源未绑定或不受支持。")
     try:
         scores = await asyncio.wait_for(loader.singleScore(user, pack.id), timeout=12)
     except asyncio.TimeoutError:
-        await minfo.finish("查询超时：成绩服务响应过慢，请稍后重试。")
-    except (score_loader_sy.NotBound, score_loader_sy.QueryLimitExceeded):
-        await minfo.finish("查询失败：水鱼账号未完成授权或查询次数已达上限。")
-    except Exception as e:
-        await minfo.finish(f"查询失败：成绩服务暂时不可用（{type(e).__name__}: {str(e)}），请稍后重试。")
+        await minfo.finish("❌查询超时：成绩服务响应过慢，请稍后重试。")
+    except score_loader_sy.QueryLimitExceeded:
+        await minfo.finish("❌查询失败：水鱼 API 查询次数已达上限，请次日重试。")
+    except score_loader_sy.NotBound:
+        await minfo.finish("❌查询失败：水鱼账号未完成授权：请使用 /bindsy 进行绑定")
+    except Exception:
+        await minfo.finish(f"❌查询失败：成绩服务暂时不可用，请联系开发者。")
 
     markdown = _render_result(target.song, pack, scores, target.chart if target.type == InfoTargetType.CHART else None)
     await minfo.finish(MessageSegment.markdown(markdown))
-

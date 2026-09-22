@@ -54,6 +54,8 @@ class SampleApi:
         if request.url.host == "auth.diving-fish.com":
             if path.endswith("/oauth/token"):
                 return httpx.Response(200, json={"access_token": "sandbox-access-token", "expires_in": 3600})
+            if path.endswith("/oauth/device_authorization"):
+                return httpx.Response(200, json={"verification_uri_complete": "https://sandbox.invalid/bind"})
             raise AssertionError(f"Unexpected sample auth request: {request.url}")
         if request.url.host == "www.diving-fish.com":
             if path.endswith("/query/player"):
@@ -102,6 +104,8 @@ async def run_checks() -> dict:
         lx_user = UserInfo("sandbox-lx", {"lxID": "1000000001", "dataSource": "lx"})
         standard = _target("id 643")
         assert standard.pack.type == "SD"
+        assert await score_loader_sy.checkBindingAsync(sy_user.qqID)
+        assert await score_loader_sy.binding_link(sy_user.qqID) == "https://sandbox.invalid/bind"
 
         sy_single = await score_loader_sy.singleScore(sy_user, standard.pack.id)
         lx_single = await score_loader_lx.singleScore(lx_user, standard.pack.id)

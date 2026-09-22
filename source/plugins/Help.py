@@ -1,25 +1,10 @@
 from nonebot import on_message
 from nonebot.rule import to_me
-from nonebot.adapters.qq import Event
+from nonebot.adapters.qq import Event, MessageSegment
 
-from ..library.command_registry import (
-    CommandInfo,
-    registerCommand,
-    registerCommandInfo,
-    renderHelp,
-)
+from ..library.command_registry import registerCommand, renderHelp
 
 VALID_COMMAND = ("/help", "help", "/帮助", "帮助")
-
-
-def _isEchoCommand(text: str) -> bool:
-    text = text.strip().lower()
-    return bool(text) and text.split(maxsplit=1)[0] in ("/echo", "echo")
-
-
-def _isStatusCommand(text: str) -> bool:
-    return text.lower().strip() in ("/status", "status", "/状态", "状态")
-
 
 @registerCommand(
     name="help",
@@ -60,4 +45,4 @@ help_command = on_message(rule=to_me() & isValidCommand, priority=1)
 
 @help_command.handle()
 async def _(event: Event):
-    await help_command.finish(renderHelp())
+    await help_command.finish(MessageSegment.markdown(renderHelp()))
