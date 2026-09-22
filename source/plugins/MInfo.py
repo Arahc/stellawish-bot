@@ -122,8 +122,8 @@ async def _(event: Event):
         await minfo.finish("查询超时：成绩服务响应过慢，请稍后重试。")
     except (score_loader_sy.NotBound, score_loader_sy.QueryLimitExceeded):
         await minfo.finish("查询失败：水鱼账号未完成授权或查询次数已达上限。")
-    except Exception:
-        await minfo.finish(f"查询失败：成绩服务暂时不可用（{Exception}），请稍后重试。")
+    except Exception as e:
+        await minfo.finish(f"查询失败：成绩服务暂时不可用（{type(e).__name__}: {str(e)}），请稍后重试。")
 
     markdown = _render_result(target.song, pack, scores, target.chart if target.type == InfoTargetType.CHART else None)
     await minfo.finish(MessageSegment.markdown(markdown))
