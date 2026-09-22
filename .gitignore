@@ -5,3 +5,4 @@ venv/
 source/data/user_info.json
 source/data/song_info.json
 source/data/pics/
+sandbox/output/

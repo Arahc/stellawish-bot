@@ -107,22 +107,28 @@ def updatePicDate(packID: int) -> bool:
     if sid not in songlist:
         logger.warning(f"Pack ID {packID} does not match any song in the song list, skipping pic date update.")
         return False
+    updated = False
     if songlist[sid].sdPack and songlist[sid].sdPack.id == packID:
         if songlist[sid].sdPack.info_pic_date != "" and songlist[sid].sdPack.info_pic_date == date:
             return False
         songlist[sid].sdPack.info_pic_date = date
+        updated = True
     elif songlist[sid].dxPack and songlist[sid].dxPack.id == packID:
         if songlist[sid].dxPack.info_pic_date != "" and songlist[sid].dxPack.info_pic_date == date:
             return False
         songlist[sid].dxPack.info_pic_date = date
+        updated = True
     else:
         for pack in songlist[sid].utPack:
             if pack.id == packID:
                 if pack.info_pic_date != "" and pack.info_pic_date == date:
                     return False
                 pack.info_pic_date = date
+                updated = True
                 break
-    SONG_LIST.set(songlist)
+    if not updated:
+        logger.warning(f"Pack ID {packID} does not match any chart pack, skipping pic date update.")
+        return False
     saveSongInfo(getSongInfo(songlist))
     return True
 
@@ -134,7 +140,6 @@ def _updatePicDate(songlist: SongList, songID: int):
         songlist[songID].dxPack.info_pic_date = date
     for pack in songlist[songID].utPack:
         pack.info_pic_date = date
-    SONG_LIST.set(songlist)
     saveSongInfo(getSongInfo(songlist))
 
 def addAlias(sid: int, alias: str) -> bool:
@@ -143,8 +148,6 @@ def addAlias(sid: int, alias: str) -> bool:
         return False
     songlist[sid].aliases.append(alias)
     _updatePicDate(songlist, sid)
-    SONG_LIST.set(songlist)
-    saveSongInfo(getSongInfo(songlist))
     return True
 
 def delAlias(sid: int, alias: str) -> bool:
@@ -152,8 +155,6 @@ def delAlias(sid: int, alias: str) -> bool:
     if alias in songlist[sid].aliases:
         songlist[sid].aliases.remove(alias)
         _updatePicDate(songlist, sid)
-        SONG_LIST.set(songlist)
-        saveSongInfo(getSongInfo(songlist))
         return True
     return False
 

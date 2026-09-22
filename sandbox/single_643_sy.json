@@ -1,0 +1,64 @@
+{
+    "643": [
+        {
+            "achievements": 100.875,
+            "ds": 5.0,
+            "dxScore": 640,
+            "fc": "ap",
+            "fs": "",
+            "level": "5",
+            "level_index": 0,
+            "level_label": "Basic",
+            "ra": 112,
+            "rate": "sssp",
+            "song_id": 643,
+            "title": "Excalibur ～Revived resolution～",
+            "type": "SD"
+        },
+        {
+            "achievements": 101.0,
+            "ds": 10.3,
+            "dxScore": 1171,
+            "fc": "app",
+            "fs": "",
+            "level": "10",
+            "level_index": 1,
+            "level_label": "Advanced",
+            "ra": 231,
+            "rate": "sssp",
+            "song_id": 643,
+            "title": "Excalibur ～Revived resolution～",
+            "type": "SD"
+        },
+        {
+            "achievements": 100.1157,
+            "ds": 13.0,
+            "dxScore": 1727,
+            "fc": "fc",
+            "fs": "sync",
+            "level": "13",
+            "level_index": 2,
+            "level_label": "Expert",
+            "ra": 281,
+            "rate": "sss",
+            "song_id": 643,
+            "title": "Excalibur ～Revived resolution～",
+            "type": "SD"
+        },
+        {
+            "achievements": 99.9601,
+            "ds": 14.8,
+            "dxScore": 2519,
+            "fc": "fc",
+            "fs": "sync",
+            "level": "14+",
+            "level_index": 3,
+            "level_label": "Master",
+            "ra": 312,
+            "rate": "ssp",
+            "song_id": 643,
+            "title": "Excalibur ～Revived resolution～",
+            "type": "SD"
+        }
+    ]
+}

@@ -551,7 +551,7 @@ class UserCard:
         ImageDraw.Draw(box).rounded_rectangle(
             (0, 0, box_w, box_h),
             radius=box_r,
-            fill=(170, 204, 255, 60)
+            fill=(170, 204, 255, 120)
         )
 
         text = f"b35 {self.profile.ra35} + b15 {self.profile.ra15} = {self.profile.rating}"

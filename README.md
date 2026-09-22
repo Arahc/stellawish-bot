@@ -9,3 +9,13 @@
 ## Documentation
 
 See [Docs](https://nonebot.dev/)
+
+## Offline sandbox
+
+Run deterministic loader, query, and Markdown checks without starting NoneBot or contacting QQ/API services:
+
+```text
+python -m sandbox
+```
+
+See [sandbox/README.md](sandbox/README.md) for details.

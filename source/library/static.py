@@ -13,6 +13,10 @@ LXNS_API_BASE_URL = "https://maimai.lxns.net/api/v0/maimai"
 LXNS_ALL_CHARTS_API_URL = LXNS_API_BASE_URL + "/song/list"
 LXNS_ALL_ALIASES_API_URL = LXNS_API_BASE_URL + "/alias/list"
 
+DF_CLIENT_ID = os.getenv("DF_CLIENT_ID")
+DF_CLIENT_SECRET = os.getenv("DF_CLIENT_SECRET")
+DF_AUTH_URL = "https://auth.diving-fish.com"
+
 BOT_PIC_DOMAIN = os.getenv("DOMAIN_BASE")
 
 DATA_PATH = Path(__file__).parent.parent / "data"
@@ -104,7 +108,10 @@ INFO_QUERY_DIFF_KEY = {
     "黄": 1,
     "红": 2,
     "紫": 3,
-    "白": 4
+    "白": 4,
+    # UT is a separate chart family, not Re:Master. All UT variants
+    # share the query category represented by diff id 5.
+    "宴会场": 5,
 }
 
 DIFF_NAME_LIST = ["Basic", "Advanced", "Expert", "Master", "Re:Master", "宴会场", "宴会场（1P）", "宴会场（2P）"]

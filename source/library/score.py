@@ -32,15 +32,32 @@ class Score:
         return cls(song, pack, chart, acc, dxScore, fc, fs, date)
 
     @classmethod
-    def loadFromLX(cls, data: dict):
+    def loadFromLX(cls, data: dict, pack_id: int | None = None):
         songlist = SONG_LIST.getSongList()
-        sid = int(data['id'])
+        sid = int(data['id']) % 10000
 
         song = songlist[sid]
         if data['type'] == 'standard':
             pack = song.sdPack
-        else:
+        elif data['type'] == 'dx':
             pack = song.dxPack
+        elif data['type'] == 'utage':
+            # LXNS identifies UT records separately.  The requested pack id
+            # disambiguates songs that contain multiple UT variants.
+            pack = None
+            if pack_id is not None:
+                _, pack = songlist.findByID(pack_id)
+            if pack is None:
+                for candidate in song.utPack:
+                    if candidate.id == int(data.get('song_id', -1)):
+                        pack = candidate
+                        break
+            if pack is None and len(song.utPack) == 1:
+                pack = song.utPack[0]
+        else:
+            raise ValueError(f"Unsupported LX chart type: {data['type']}")
+        if pack is None:
+            raise ValueError(f"Chart pack not found for LX record: {data}")
         chart = pack.charts[int(data['level_index'])]
         acc = float(data['achievements'])
         dxScore = int(data['dx_score'])
@@ -80,8 +97,8 @@ class ScoreList(list[Score]):
         return cls(scores, "sy", raCalcer)
 
     @classmethod
-    def loadFromLX(cls, data: list[dict], raCalcer: RatingCalcer | None = None):
-        scores = [Score.loadFromLX(item) for item in data]
+    def loadFromLX(cls, data: list[dict], raCalcer: RatingCalcer | None = None, pack_id: int | None = None):
+        scores = [Score.loadFromLX(item, pack_id=pack_id) for item in data]
         return cls(scores, "lx", raCalcer)
 
     @property

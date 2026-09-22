@@ -113,15 +113,15 @@ class QueryEngine:
         return pack.type == indent.type
     
     def _matchDiff(self, indent: QueryIntent, chart: Chart) -> bool:
-        if not indent.diff:
+        if indent.diff is None:
             return True
         if chart.diffid > 4:
-            return indent.diff == 4
+            return indent.diff == 5
         return chart.diffid == indent.diff
 
     def _query(self, intent: QueryIntent) -> list[InfoTarget]:
         is_song = False
-        if intent.diff:
+        if intent.diff is not None:
             pool = self.chart_entries
         elif intent.type:
             pool = self.pack_entries
@@ -138,17 +138,11 @@ class QueryEngine:
                 continue
             res.append(entry)
             if is_song:
-                if entry.song.sdPack:
+                for pack in entry.song.getCharts():
                     res.append(InfoTarget(
                         type=InfoTargetType.PACK,
                         song=entry.song,
-                        pack=entry.song.sdPack
-                    ))
-                if entry.song.dxPack:
-                    res.append(InfoTarget(
-                        type=InfoTargetType.PACK,
-                        song=entry.song,
-                        pack=entry.song.dxPack
+                        pack=pack
                     ))
         return res
 
@@ -172,14 +166,15 @@ class QueryEngine:
         if intent.type:
             if intent.type != pack.type:
                 return []
-        if intent.diff:
-            if intent.diff < len(pack.charts):
-                return [InfoTarget(
-                    type=InfoTargetType.CHART,
-                    song=song,
-                    pack=pack,
-                    chart=pack.charts[intent.diff]
-                )]
+        if intent.diff is not None:
+            for chart in pack.charts:
+                if self._matchDiff(intent, chart):
+                    return [InfoTarget(
+                        type=InfoTargetType.CHART,
+                        song=song,
+                        pack=pack,
+                        chart=chart,
+                    )]
             return []
         return [
             InfoTarget(
@@ -222,7 +217,7 @@ class QueryEngine:
                     e.type,
                     e.song.id,
                     e.pack.id if e.pack else None,
-                    e.chart.diff if e.chart else None
+                    e.chart.diffid if e.chart else None
                 )
                 if key not in seen:
                     seen.add(key)

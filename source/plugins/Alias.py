@@ -2,7 +2,7 @@ from nonebot import on_message
 from nonebot.rule import to_me
 from nonebot.adapters.qq import Event
 
-from ..library.command_registry import registerChecker
+from ..library.command_registry import registerCommand
 from ..library.song_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 
@@ -13,7 +13,13 @@ QUERY_POLICY = QueryPolicy(
     allow_song=True
 )
 
-@registerChecker
+@registerCommand(
+    name="alias",
+    usage="/alias <歌曲名称或 ID>",
+    description="查询歌曲别名。",
+    aliases=("alias", "查别名", "查别称", "<歌曲>有什么别名"),
+    category="查询",
+)
 def isCommandText(text: str) -> bool:
     lower_text = text.lower()
     return lower_text.startswith(CANBE_PREFIX) or lower_text.endswith(CANBE_SUFFIX)

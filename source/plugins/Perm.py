@@ -3,11 +3,17 @@ from nonebot.rule import to_me
 from nonebot.permission import SUPERUSER
 from nonebot.adapters.qq import Event, Bot
 
-from ..library.command_registry import registerChecker
+from ..library.command_registry import registerCommand
 
 VALIDCOMMAND = ("/perm", "perm", "/权限", "权限", "/查权限", "查权限")
 
-@registerChecker
+@registerCommand(
+    name="perm",
+    usage="/perm",
+    description="查询当前用户的星愿权限。",
+    aliases=("perm", "权限", "查权限"),
+    category="其他",
+)
 def isCommandText(text: str) -> bool:
     return text.lower() in VALIDCOMMAND
 
@@ -19,4 +25,4 @@ async def _(bot: Bot, event: Event):
     flag: bool = await checker(bot, event)
     if flag:
         await perm.finish(f"你的星愿权限为：😎管理员")
-    await perm.finish(f"你的星愿权限为：🙂普通用户")
+    await perm.finish(f"你的星愿权限为：🥳普通用户")

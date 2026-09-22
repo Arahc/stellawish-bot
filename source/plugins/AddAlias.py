@@ -3,14 +3,21 @@ from nonebot.rule import to_me
 from nonebot.adapters.qq import Event, Bot
 from nonebot.permission import SUPERUSER
 
-from ..library.command_registry import registerChecker
+from ..library.command_registry import registerCommand
 from ..library.song_loader import addAlias
 from ..library.song_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 
 CANBE_PREFIX = ("/addalias", "addalias", "/加别名", "加别名", "/加别称", "加别称")
 
-@registerChecker
+@registerCommand(
+    name="addalias",
+    usage="/addalias <歌曲名称或 ID> <别名>",
+    description="为歌曲添加别名。",
+    aliases=("addalias", "加别名", "加别称"),
+    category="管理",
+    permission="管理员",
+)
 def isCommandText(text: str) -> bool:
     return text.lower().startswith(CANBE_PREFIX)
 

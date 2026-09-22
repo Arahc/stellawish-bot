@@ -4,13 +4,19 @@ from nonebot.adapters.qq import Event
 
 from ..library.userinfo_manager import USER_INFO
 from ..library.userinfo_loader import bindScoreSource
-from ..library.command_registry import registerChecker
+from ..library.command_registry import registerCommand
 
 import re
 
 CANBE_PREFIX = ("/bind", "bind", "/绑定", "绑定", "/绑", "绑")
 
-@registerChecker
+@registerCommand(
+    name="bind",
+    usage="/bind qq <QQ号> sy <水鱼Token> lx <落雪ID> src <sy|lx>",
+    description="绑定成绩数据源；参数可以按需组合。",
+    aliases=("bind", "绑定"),
+    category="账号与设置",
+)
 def isCommandText(text: str) -> bool:
     lower_text = text.lower()
     return lower_text.startswith(CANBE_PREFIX)
@@ -61,7 +67,7 @@ DUMP_MAP = {
     "qqID": "QQ 号",
     "syToken": "水鱼 Token",
     "lxID": "落雪好友码",
-    "dataSource": "b50 数据源"
+    "dataSource": "数据源"
 }
 
 def dumpInfo(info) -> str:

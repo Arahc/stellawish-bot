@@ -4,7 +4,7 @@ from nonebot import on_message
 from nonebot.rule import to_me
 from nonebot.adapters.qq import Event, MessageSegment
 
-from ..library.command_registry import registerChecker
+from ..library.command_registry import registerCommand
 from ..library.song_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 from ..library.songinfo_drawer import generateSongInfo
@@ -14,7 +14,13 @@ from ..library.song_loader import updatePicDate, getToday
 CANBE_PREFIX = ("/info", "info", "/查歌", "查歌")
 CANBE_SUFFIX = ("是什么歌",)
 
-@registerChecker
+@registerCommand(
+    name="info",
+    usage="/info <歌曲名称或 ID>",
+    description="查询歌曲、谱面和歌曲信息图。",
+    aliases=("info", "查歌", "<歌曲>是什么歌"),
+    category="查询",
+)
 def isCommandText(text: str) -> bool:
     lower_text = text.lower()
     return lower_text.startswith(CANBE_PREFIX) or lower_text.endswith(CANBE_SUFFIX)
@@ -45,9 +51,9 @@ async def _(event: Event):
     query_engine = SONG_LIST.getQueryEngine()
     res = query_engine.query(text, QUERY_POLICY)
     if not res:
-        await info.finish(f"❌ 查询失败！未找到「{text}」对应的曲目。")
+        await info.finish(f"❌查询失败！未找到「{text}」对应的曲目。")
     if len(res) > 1:
-        msg = "⚠️ 找到多个符合条件的曲目，请使用更精确的名称或 ID：\n"
+        msg = "⚠️找到多个符合条件的曲目，请使用更精确的名称或 ID：\n"
         for e in res:
             msg += f"- {e.song.title}（{e.pack.id}，{e.pack.type}）\n"
         await info.finish(msg.strip())

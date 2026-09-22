@@ -3,14 +3,21 @@ from nonebot.rule import to_me
 from nonebot.adapters.qq import Event, Bot
 from nonebot.permission import SUPERUSER
 
-from ..library.command_registry import registerChecker
+from ..library.command_registry import registerCommand
 from ..library.song_loader import delAlias
 from ..library.song_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 
 CANBE_PREFIX = ("/delalias", "delalias", "/删别名", "删别名", "/删别称", "删别称")
 
-@registerChecker
+@registerCommand(
+    name="delalias",
+    usage="/delalias <歌曲名称或 ID> <别名>",
+    description="删除歌曲已有的别名。",
+    aliases=("delalias", "删别名", "删别称"),
+    category="管理",
+    permission="管理员",
+)
 def isCommandText(text: str) -> bool:
     return text.lower().startswith(CANBE_PREFIX)
 

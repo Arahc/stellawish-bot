@@ -4,12 +4,18 @@ from nonebot.adapters.qq import Event
 
 from ..library.userinfo_manager import USER_INFO
 from ..library.userinfo_loader import bindScoreSource
-from ..library.command_registry import registerChecker
+from ..library.command_registry import registerCommand
 from ..library.static import ICON_DIR, PLATE_DIR
 
 CANBE_PREFIX = ("/profile", "/prof", "profile", "prof", "设置", "/设置", "设", "/设")
 
-@registerChecker
+@registerCommand(
+    name="profile",
+    usage="/prof icon <头像ID> plate <姓名框ID>",
+    description="设置 B50 成绩图中的头像和姓名框；参数可以单独设置。",
+    aliases=("profile", "prof", "设置"),
+    category="账号与设置",
+)
 def isCommandText(text: str) -> bool:
     lower_text = text.lower()
     return lower_text.startswith(CANBE_PREFIX)
@@ -67,7 +73,7 @@ def dumpInfo(info) -> str:
             continue
         if DUMP_MAP.get(key) is None:
             continue
-        if val is None:
+        if val is None or val == "0" or val == 0:
             lines.append(f"⚠️{DUMP_MAP.get(key, key)}：未设置")
         else:
             lines.append(f"✅{DUMP_MAP.get(key, key)}：{val}")

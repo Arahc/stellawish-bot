@@ -55,3 +55,10 @@ class UserInfo:
         elif self.dataSource == "lx":
             return self.lxID is not None
         return False
+
+    def canMInfo(self) -> bool:
+        if self.dataSource == "sy":
+            return self.syToken is not None
+        elif self.dataSource == "lx":
+            return self.lxID is not None
+        return False

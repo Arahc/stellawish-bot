@@ -7,14 +7,20 @@ from nonebot_plugin_session import EventSession, SessionIdType
 import random
 
 from ..library.game_manager import GameManager
-from ..library.command_registry import registerChecker, isAnyCommand
+from ..library.command_registry import registerCommand, isAnyCommand
 from ..library.utils import fetchChartCover
 from ..library.static import VERSION_DICT
 from ..library.song_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 
 VALIDCOMMAND = ("/chartel", "chartel", "/猜歌", "猜歌", "/舞萌猜歌", "舞萌猜歌")
-@registerChecker
+@registerCommand(
+    name="chartel",
+    usage="/chartel",
+    description="开始舞萌猜歌游戏。",
+    aliases=("chartel", "猜歌", "舞萌猜歌"),
+    category="游戏",
+)
 def isCommandText(text: str) -> bool:
     return text.lower() in VALIDCOMMAND
 

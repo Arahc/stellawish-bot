@@ -7,7 +7,17 @@ class Chart:
         self.slide = notes['slide']
         self.touch = notes['touch']
         self.breaks = notes['break']
-        self.diff = (chart['level'] if int(chart['level_value']) == 0 else float(chart['level_value']))
+        try:
+            level_value = float(chart['level_value'])
+        except (TypeError, ValueError):
+            level_value = 0
+        raw_diff = chart['level'] if level_value == 0 else chart['level_value']
+        try:
+            numeric_diff = float(raw_diff)
+            self.diff = int(numeric_diff) if numeric_diff.is_integer() else numeric_diff
+        except (TypeError, ValueError):
+            # UT levels such as "14+" are labels, not rating constants.
+            self.diff = str(raw_diff)
         self.diffid = diffid
         self.charter = chart['note_designer']
 
@@ -87,12 +97,6 @@ class Song:
         self.sdPack = None
         self.dxPack = None
         self.utPack = []
-        if song['difficulties']['standard']:
-            self.sdPack = ChartPack(song['difficulties']['standard'], _toSDid(self.id))
-        if song['difficulties']['dx']:
-            self.dxPack = ChartPack(song['difficulties']['dx'], _toDXid(self.id))
-        if int(song['id']) >= 100000:
-            self.utPack.append(ChartPack(song['difficulties']['utage'], int(song['id'])))
         self.mergeChart(song)
 
     def mergeChart(self, song:dict):
@@ -138,7 +142,7 @@ class SongList(dict[int, Song]):
         res = []
         text = text.strip().lower()
         for song in self.values():
-            if text in song.title or text in song.alias:
+            if text in song.title.lower() or any(text in alias.lower() for alias in song.aliases):
                 res.append(song)
         return res
 

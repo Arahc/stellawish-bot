@@ -9,14 +9,20 @@ import re
 from unicodedata import normalize as ucn
 
 from ..library.game_manager import GameManager
-from ..library.command_registry import registerChecker, isAnyCommand
+from ..library.command_registry import registerCommand, isAnyCommand
 from ..library.song_manager import SONG_LIST
 from ..library.info_handler import QueryPolicy
 
 DEFAULT_SONG_NUM = 8
 
 CANBE_PREFIX = ("/hangman", "hangman", "/开字母", "开字母", "/舞萌开字母", "舞萌开字母")
-@registerChecker
+@registerCommand(
+    name="hangman",
+    usage="/hangman [歌曲数量]",
+    description="开始舞萌开字母游戏，歌曲数量可设为 1 到 30。",
+    aliases=("hangman", "开字母", "舞萌开字母"),
+    category="游戏",
+)
 def isCommandText(text: str) -> bool:
     return text.lower().startswith(CANBE_PREFIX)
 
